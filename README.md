@@ -16,6 +16,8 @@
 
 # Smart Emotion and Focus Journal (Akıllı Duygu ve Odak Günlüğü)
 
+**Vercel Live Demo**: [https://smart-emotion-focus-journal-fronten.vercel.app](https://smart-emotion-focus-journal-fronten.vercel.app)
+
 An advanced Next.js frontend prototype built for evaluation of user emotional states, cognitive workloads, and focus efficiencies. This project is architected to perform local **Decision Scoring** and **Raw LLM Monitoring** using browser-embedded large language models (such as **Gemma-2B** via **Web MLC-LLM**).
 
 ## 🚀 Key Objectives
@@ -74,10 +76,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to experie
 
 ---
 
-## 🧠 Future Web MLC-LLM (Gemma) Integration Flow
+## 🧠 Web MLC-LLM (Gemma) Integration & Telemetry
 
-1. **Model Loader Initialization**: Install `@mlc-ai/web-llm` library.
-2. **GPU Allocation & Compilation**: Request WebGPU adapter on mount, compile shaders, and check local storage for cached model weights.
-3. **Weight Pinned Cache**: Preload Gemma-2B-it weights (approx 1.5GB) into indexedDB browser cache.
-4. **Structured Inference**: Construct System JSON schemas to force JSON-formatted output containing `cognitiveLoad`, `focusLevel`, `stressLevel`, `dominantEmotion`, and `suggestion`.
-5. **Telemetry Hooks**: Feed execution timestamps and cache stats into the Dashboard telemetry state.
+The Web-LLM local inference engine is **fully integrated**:
+1. **Model Loader Initialization**: Uses `@mlc-ai/web-llm` dynamic module loads within client context to safeguard builds.
+2. **GPU Allocation & Compilation**: Automatically checks WebGPU support, requests adapter, compiles shaders, and streams weights caching.
+3. **Weight Pinned Cache**: Automatically caches Gemma-2B-it weights (approx 1.5GB) locally on first run.
+4. **Structured Inference**: Prompted to output structured raw decisions that are parsed into cognitive load, stress, and focus charts.
+5. **Telemetry Sync**: Latency and token metrics are pushed to the live database and visualized dynamically on the dashboard.
