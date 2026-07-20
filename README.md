@@ -17,7 +17,7 @@
 # Smart Emotion and Focus Journal (Akıllı Duygu ve Odak Günlüğü)
 
 **Vercel Live Demo**: [https://smart-emotion-focus-journal-fronten.vercel.app](https://smart-emotion-focus-journal-fronten.vercel.app)  
-**Go Backend Module Repository**: [https://github.com/gurkanfikretgunak/masterfabric-go](https://github.com/gurkanfikretgunak/masterfabric-go)
+**Go Backend Source Repository**: [https://github.com/Gurkan26/smart-emotion-focus-journal-backend](https://github.com/Gurkan26/smart-emotion-focus-journal-backend)
 
 An advanced Next.js frontend prototype built for evaluation of user emotional states, cognitive workloads, and focus efficiencies. This project is architected to perform local **Decision Scoring** and **Raw LLM Monitoring** using browser-embedded large language models (such as **Gemma-2B** via **Web MLC-LLM**).
 
