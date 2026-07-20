@@ -12,7 +12,9 @@ import {
   PlusCircle, 
   Search,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  Gauge
 } from 'lucide-react';
 
 const INITIAL_LOGS = [
@@ -23,10 +25,17 @@ const INITIAL_LOGS = [
   { id: '1080', timestamp: '17:58:20', prompt: 'Testing cognitive load evaluation with random text inputs and stress indicators.', load: 45, latency: '0.08s', tokens: 120, cache: 'HIT', status: 'SUCCESS' }
 ];
 
+const INITIAL_REFLECTIONS = [
+  { id: 1, content: "Preparing for my Go presentation tomorrow, nervous but ready.", decision_score: 75, created_at: new Date().toISOString() },
+  { id: 2, content: "Flow state coding CSS interface. Coffee kicked in.", decision_score: 25, created_at: new Date().toISOString() }
+];
+
 export default function DashboardPage() {
   const [logs, setLogs] = useState([]);
+  const [reflections, setReflections] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking'); // healthy, offline, checking
+  const [avgCognitiveLoad, setAvgCognitiveLoad] = useState(50);
   const [stats, setStats] = useState({
     tokensProcessed: 184210,
     avgLatencyMs: 142,
@@ -63,10 +72,12 @@ export default function DashboardPage() {
         }
         setLogs(INITIAL_LOGS);
         calculateStats(INITIAL_LOGS);
+        setReflections(INITIAL_REFLECTIONS);
       } catch (err) {
         console.error("Local storage read failed:", err);
         setLogs(INITIAL_LOGS);
         calculateStats(INITIAL_LOGS);
+        setReflections(INITIAL_REFLECTIONS);
       }
     };
 
@@ -78,6 +89,7 @@ export default function DashboardPage() {
 
     try {
       console.log('Fetching live telemetry logs from:', `${backendUrl}/api/monitor/metrics`);
+      // 1. Fetch metrics (GET /api/monitor/metrics)
       const response = await fetch(`${backendUrl}/api/monitor/metrics`, {
         method: "GET",
         headers: {
@@ -92,6 +104,42 @@ export default function DashboardPage() {
 
       const backendMetrics = await response.json(); // array of models.LlmMetric
 
+      // 2. Fetch reflections (GET /api/journal)
+      try {
+        const journalRes = await fetch(`${backendUrl}/api/journal`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json"
+          }
+        });
+        if (journalRes.ok) {
+          const backendJournals = await journalRes.json();
+          if (Array.isArray(backendJournals)) {
+            setReflections(backendJournals);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch journal reflections:", e);
+      }
+
+      // 3. Fetch score summaries (GET /api/monitor/scores)
+      try {
+        const scoreRes = await fetch(`${backendUrl}/api/monitor/scores`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json"
+          }
+        });
+        if (scoreRes.ok) {
+          const scoreData = await scoreRes.json();
+          setAvgCognitiveLoad(Math.round(scoreData.avg_cognitive_load || 50));
+        }
+      } catch (e) {
+        console.warn("Could not fetch scores stats:", e);
+      }
+
       if (Array.isArray(backendMetrics) && backendMetrics.length > 0) {
         const mappedLogs = backendMetrics.map((metric, i) => {
           let cognitiveLoad = 50;
@@ -101,7 +149,6 @@ export default function DashboardPage() {
           if (match) {
             cognitiveLoad = parseInt(match[1], 10);
           } else {
-            // fallback load based on index
             cognitiveLoad = Math.min(100, Math.max(15, 85 - (i * 12)));
           }
 
@@ -216,6 +263,8 @@ export default function DashboardPage() {
     try {
       localStorage.removeItem('journal_telemetry_logs');
       setLogs([]);
+      setReflections([]);
+      setAvgCognitiveLoad(50);
       setStats({
         tokensProcessed: 0,
         avgLatencyMs: 0,
@@ -223,7 +272,7 @@ export default function DashboardPage() {
         vramAllocatedGB: 0
       });
 
-      // Clear from database if authenticated
+      // Clear from database if authenticated (DELETE /api/monitor/clear)
       if (token) {
         await fetch(`${backendUrl}/api/monitor/clear`, {
           method: "DELETE",
@@ -292,8 +341,11 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
             Raw LLM Monitoring
           </h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            Real-time telemetry of Web-LLM local inference, memory consumption, and cache hits.
+          <p className="text-zinc-400 text-sm mt-1 flex items-center gap-2">
+            <span>Real-time telemetry of local inference and cache hits.</span>
+            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-bold">
+              Avg Load: {avgCognitiveLoad}%
+            </span>
           </p>
         </div>
         
@@ -501,7 +553,7 @@ export default function DashboardPage() {
               </svg>
             )}
           </div>
-          <div className="flex justify-between text-[9px] text-zinc-550 font-mono tracking-wider">
+          <div className="flex justify-between text-[9px] text-zinc-500 font-mono tracking-wider">
             {recentLogs.map((log, i) => (
               <span key={i}>Run #{log.id}</span>
             ))}
@@ -510,74 +562,111 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Raw Telemetry Log Table */}
-      <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-purple-400" />
-            <h3 className="text-sm font-bold text-zinc-200">Recent Local Inference Logs</h3>
+      {/* Dynamic Bottom Sections Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Raw Telemetry Log Table (7 cols) */}
+        <div className="lg:col-span-7 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-purple-400" />
+              <h3 className="text-sm font-bold text-zinc-200">Recent Local Inference Logs</h3>
+            </div>
+            <span className="text-[10px] text-zinc-550 font-mono font-bold">Node: dev-node-0</span>
           </div>
-          <span className="text-[10px] text-zinc-500 font-mono">Telemetry Node: dev-node-0</span>
+
+          {logs.length === 0 ? (
+            <div className="p-8 text-center text-zinc-650 flex flex-col items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-zinc-600 mb-2" />
+              <p className="text-xs">No traces loaded. Submit journal entries on the Journal page to sync telemetry data.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-zinc-400 border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-850/80 text-[10px] text-zinc-500 uppercase font-semibold">
+                    <th className="py-3 px-4">Log ID</th>
+                    <th className="py-3 px-4">Timestamp</th>
+                    <th className="py-3 px-4">Action Insight Snip</th>
+                    <th className="py-3 px-4">Cognitive Load</th>
+                    <th className="py-3 px-4">Latency</th>
+                    <th className="py-3 px-4">Tokens</th>
+                    <th className="py-3 px-4 text-right">Cache</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr 
+                      key={log.id} 
+                      className="border-b border-zinc-850/40 hover:bg-zinc-900/20 transition-colors font-mono"
+                    >
+                      <td className="py-3 px-4 text-purple-400 font-bold">#{log.id}</td>
+                      <td className="py-3 px-4 text-zinc-500">{log.timestamp}</td>
+                      <td className="py-3 px-4 max-w-[180px] truncate text-zinc-300 font-sans">{log.prompt}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          log.load > 70 ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20' : 
+                          log.load > 40 ? 'bg-amber-500/10 text-amber-450 border border-amber-500/20' : 
+                          'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
+                        }`}>
+                          {log.load}%
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-zinc-350">{log.latency}</td>
+                      <td className="py-3 px-4 text-zinc-400">{log.tokens} tks</td>
+                      <td className="py-3 px-4 text-right">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          log.cache === 'HIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-450 border border-rose-500/20'
+                        }`}>
+                          {log.cache}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {logs.length === 0 ? (
-          <div className="p-8 text-center text-zinc-650 flex flex-col items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-zinc-600 mb-2" />
-            <p className="text-xs">No traces loaded. Submit journal entries on the Journal page to sync telemetry data.</p>
+        {/* Right Column: Synced Reflections History (5 cols) */}
+        <div className="lg:col-span-5 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold text-zinc-200">Synced Database Reflections</h3>
+            </div>
+            <span className="text-[10px] text-zinc-550 font-mono font-bold">API: /api/journal</span>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-400 border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-850/80 text-[10px] text-zinc-500 uppercase font-semibold">
-                  <th className="py-3 px-4">Log ID</th>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4">Input Prompt Snip</th>
-                  <th className="py-3 px-4">Cognitive Load</th>
-                  <th className="py-3 px-4">Latency</th>
-                  <th className="py-3 px-4">Tokens</th>
-                  <th className="py-3 px-4">Cache</th>
-                  <th className="py-3 px-4 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr 
-                    key={log.id} 
-                    className="border-b border-zinc-850/40 hover:bg-zinc-900/20 transition-colors font-mono"
-                  >
-                    <td className="py-3 px-4 text-purple-400 font-bold">#{log.id}</td>
-                    <td className="py-3 px-4 text-zinc-500">{log.timestamp}</td>
-                    <td className="py-3 px-4 max-w-[200px] truncate text-zinc-300 font-sans">{log.prompt}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        log.load > 70 ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20' : 
-                        log.load > 40 ? 'bg-amber-500/10 text-amber-450 border border-amber-500/20' : 
-                        'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
-                      }`}>
-                        {log.load}%
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-zinc-350">{log.latency}</td>
-                    <td className="py-3 px-4 text-zinc-400">{log.tokens} tks</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                        log.cache === 'HIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-450 border border-rose-500/20'
-                      }`}>
-                        {log.cache}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <span className="text-emerald-400 font-bold text-[10px] flex items-center justify-end gap-1 font-sans">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+
+          {reflections.length === 0 ? (
+            <div className="p-8 text-center text-zinc-650 flex flex-col items-center justify-center min-h-[150px]">
+              <BookOpen className="w-8 h-8 text-zinc-600 mb-2" />
+              <p className="text-xs">No reflections stored in database. Write your thoughts on the Journal page.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {reflections.slice(0, 10).map((ref) => (
+                <div key={ref.id} className="p-3 bg-zinc-900/60 border border-zinc-850 rounded-2xl hover:border-zinc-800 transition-colors">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[9px] font-mono text-zinc-500">
+                      {new Date(ref.created_at).toLocaleString().split(',')[1]?.trim() || "Synced"}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
+                      ref.decision_score > 70 ? 'bg-rose-500/5 text-rose-400 border-rose-500/10' : 
+                      ref.decision_score > 40 ? 'bg-amber-500/5 text-amber-400 border-amber-500/10' : 
+                      'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
+                    }`}>
+                      Score: {ref.decision_score}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 line-clamp-2 leading-relaxed">
+                    {ref.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

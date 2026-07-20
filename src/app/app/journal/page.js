@@ -88,6 +88,27 @@ export default function JournalPage() {
           setEngineLoading(false);
           setWebGpuSupported(false);
           setEngineError(err.message || 'Failed to initialize local model.');
+
+          // Log error to backend (POST /api/monitor/error)
+          try {
+            const token = localStorage.getItem('journal_auth_token');
+            const headers = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+            
+            const backendUrl = typeof window !== "undefined" && window.location.hostname === "localhost"
+              ? "http://localhost:8080"
+              : "https://smart-emotion-focus-journal-backend.onrender.com";
+
+            await fetch(`${backendUrl}/api/monitor/error`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                error_log: err.message || "Failed to initialize WebGPU/Gemma local model."
+              })
+            });
+          } catch (e) {
+            console.error("Failed to post error log:", e);
+          }
         }
       }
     }
