@@ -87,3 +87,52 @@ body {
 .animate-pulse-slow {
   animation: pulse-slow 4s ease-in-out infinite;
 }
+
+/* Light mode overrides */
+.light {
+  --background: #f4f4f5; /* zinc-100 */
+  --foreground: #09090b; /* zinc-950 */
+
+  --color-zinc-950: #f4f4f5;
+  --color-zinc-900: #e4e4e7;
+  --color-zinc-850: #d4d4d8;
+  --color-zinc-800: #d4d4d8;
+  --color-zinc-700: #a1a1aa;
+  
+  --color-zinc-50: #09090b;
+  --color-zinc-100: #09090b;
+  --color-zinc-205: #18181b;
+  --color-zinc-200: #18181b;
+  --color-zinc-300: #27272a;
+  --color-zinc-450: #52525b;
+  --color-zinc-400: #3f3f46;
+  --color-zinc-500: #52525b;
+  --color-zinc-550: #71717a;
+  
+  /* Reverse the grid line backgrounds */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, rgba(9, 9, 11, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(9, 9, 11, 0.04) 1px, transparent 1px);
+  }
+
+  /* Glass panel light style */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(9, 9, 11, 0.1);
+  }
+
+  /* Specific element coloring fixes */
+  .text-zinc-400 {
+    color: #52525b !important;
+  }
+  .text-zinc-500 {
+    color: #71717a !important;
+  }
+  .text-zinc-300 {
+    color: #18181b !important;
+  }
+  .text-zinc-200 {
+    color: #09090b !important;
+  }
+}

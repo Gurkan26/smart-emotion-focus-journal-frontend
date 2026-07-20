@@ -56,6 +56,17 @@ export default function AppLayout({ children }) {
     fetchVersionAndConfig();
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (configSettings.theme === 'light') {
+        root.classList.add('light');
+      } else {
+        root.classList.remove('light');
+      }
+    }
+  }, [configSettings.theme]);
+
   const fetchVersionAndConfig = async () => {
     const backendUrl = getBackendUrl();
     const token = localStorage.getItem('journal_auth_token');
