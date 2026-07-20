@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Brain, Mail, Lock, User, ArrowRight, Sparkles } from 'lucide-react';
+import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -10,9 +10,18 @@ export default function AuthPage() {
     name: '',
     email: 'demo@masterfabric.co',
     password: 'password123',
-    agree: false
+    agree: true
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  const getBackendUrl = () => {
+    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+      return "http://localhost:8080";
+    }
+    return "https://smart-emotion-focus-journal-backend.onrender.com";
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,21 +31,81 @@ export default function AuthPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
     
-    // Simulate API request logs
-    console.log('--- Authentication Attempt ---');
-    console.log('Mode:', isLogin ? 'Sign In / Login' : 'Register / Create Account');
-    console.log('Data:', formData);
+    const backendUrl = getBackendUrl();
+    const endpoint = isLogin ? `${backendUrl}/login` : `${backendUrl}/register`;
     
-    // Simulated Latency
-    setTimeout(() => {
+    console.log(`--- Auth Request to ${endpoint} ---`);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Authentication failed. Please try again.");
+      }
+
+      if (isLogin) {
+        console.log('Login successful!', data);
+        // Store Session token in local storage
+        if (data.token) {
+          localStorage.setItem('journal_auth_token', data.token);
+          localStorage.setItem('journal_auth_user', JSON.stringify(data.user || { email: formData.email }));
+        }
+        setSuccessMessage("Success! Redirecting to workspace...");
+        setTimeout(() => {
+          router.push('/app/journal');
+        }, 800);
+      } else {
+        console.log('Registration successful!', data);
+        setSuccessMessage("Account created successfully! Auto-logging you in...");
+        
+        // Auto Login after successful registration
+        setTimeout(async () => {
+          try {
+            const loginRes = await fetch(`${backendUrl}/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: formData.email, password: formData.password })
+            });
+            const loginData = await loginRes.json();
+            if (loginRes.ok && loginData.token) {
+              localStorage.setItem('journal_auth_token', loginData.token);
+              localStorage.setItem('journal_auth_user', JSON.stringify(loginData.user));
+              router.push('/app/journal');
+            } else {
+              // Redirect to Sign In Tab if auto-login fails
+              setIsLogin(true);
+              setSuccessMessage("Account registered successfully. Please sign in.");
+            }
+          } catch (loginErr) {
+            setIsLogin(true);
+            setSuccessMessage("Account registered successfully. Please sign in.");
+          }
+        }, 1000);
+      }
+    } catch (err) {
+      console.error('Authentication error:', err);
+      setError(err.message || "Failed to communicate with authentication servers.");
+    } finally {
       setLoading(false);
-      console.log('Authentication Successful! Redirecting to journal...');
-      router.push('/app/journal');
-    }, 1200);
+    }
   };
 
   return (
@@ -67,7 +136,11 @@ export default function AuthPage() {
           {/* Tabs */}
           <div className="flex border-b border-zinc-800/80 bg-zinc-900/40">
             <button
-              onClick={() => setIsLogin(true)}
+              onClick={() => {
+                setIsLogin(true);
+                setError(null);
+                setSuccessMessage(null);
+              }}
               className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
                 isLogin 
                   ? 'text-purple-400 border-purple-500 bg-purple-500/5' 
@@ -77,7 +150,11 @@ export default function AuthPage() {
               Sign In
             </button>
             <button
-              onClick={() => setIsLogin(false)}
+              onClick={() => {
+                setIsLogin(false);
+                setError(null);
+                setSuccessMessage(null);
+              }}
               className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
                 !isLogin 
                   ? 'text-purple-400 border-purple-500 bg-purple-500/5' 
@@ -87,6 +164,20 @@ export default function AuthPage() {
               Register
             </button>
           </div>
+
+          {/* Feedback Messages */}
+          {error && (
+            <div className="mx-8 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-450 rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>{error}</span>
+            </div>
+          )}
+          {successMessage && (
+            <div className="mx-8 mt-6 p-3.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 rounded-xl text-xs flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>{successMessage}</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-8 space-y-5">
@@ -104,7 +195,7 @@ export default function AuthPage() {
                     onChange={handleInputChange}
                     required={!isLogin}
                     placeholder="Enter your name"
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-600"
+                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
                   />
                 </div>
               </div>
@@ -123,7 +214,7 @@ export default function AuthPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-600"
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
                 />
               </div>
             </div>
@@ -148,7 +239,7 @@ export default function AuthPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-600"
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
                 />
               </div>
             </div>
@@ -176,7 +267,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 active:scale-[0.98] transition-all rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 disabled:opacity-70 disabled:cursor-not-allowed group"
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 active:scale-[0.98] transition-all rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -194,7 +285,7 @@ export default function AuthPage() {
         <div className="mt-6 p-4 bg-zinc-900/40 rounded-2xl border border-zinc-800/50 text-center">
           <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
             <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Demo Mode: Click <strong>Sign In</strong> to instantly enter the app.</span>
+            <span>Interactive APIs active: Registrations are saved in GORM/Memory.</span>
           </p>
         </div>
       </div>

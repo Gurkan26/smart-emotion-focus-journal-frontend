@@ -210,17 +210,33 @@ export default function JournalPage() {
         console.error('Failed to save run to localStorage:', err);
       }
 
+      const contentToSend = journalText;
       // Reset the input area
       setJournalText('');
 
+      // Determine backend URL and auth headers
+      const getBackendUrl = () => {
+        if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+          return "http://localhost:8080";
+        }
+        return "https://smart-emotion-focus-journal-backend.onrender.com";
+      };
+
+      const backendUrl = getBackendUrl();
+      const token = localStorage.getItem('journal_auth_token');
+      const fetchHeaders = {
+        "Content-Type": "application/json"
+      };
+      if (token) {
+        fetchHeaders["Authorization"] = `Bearer ${token}`;
+      }
+
       // Send to Backend 1: Raw LLM metrics
       try {
-        console.log('Sending metrics to Render backend...');
-        const metricsRes = await fetch("https://smart-emotion-focus-journal-backend.onrender.com/api/monitor/metrics", {
+        console.log('Sending metrics to backend...');
+        const metricsRes = await fetch(`${backendUrl}/api/monitor/metrics`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: fetchHeaders,
           body: JSON.stringify({
             latency_ms: Math.round(latencyMs),
             token_count: totalTokens,
@@ -235,14 +251,12 @@ export default function JournalPage() {
 
       // Send to Backend 2: Journal Entry
       try {
-        console.log('Sending journal entry to Render backend...');
-        const journalRes = await fetch("https://smart-emotion-focus-journal-backend.onrender.com/api/journal", {
+        console.log('Sending journal entry to backend...');
+        const journalRes = await fetch(`${backendUrl}/api/journal`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: fetchHeaders,
           body: JSON.stringify({
-            content: journalText,
+            content: contentToSend,
             llm_response: replyText
           })
         });

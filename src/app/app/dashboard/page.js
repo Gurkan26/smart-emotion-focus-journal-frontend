@@ -26,7 +26,7 @@ const INITIAL_LOGS = [
 export default function DashboardPage() {
   const [logs, setLogs] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [backendStatus, setBackendStatus] = useState('healthy'); // healthy, offline, checking
+  const [backendStatus, setBackendStatus] = useState('checking'); // healthy, offline, checking
   const [stats, setStats] = useState({
     tokensProcessed: 184210,
     avgLatencyMs: 142,
@@ -34,28 +34,107 @@ export default function DashboardPage() {
     vramAllocatedGB: 1.48
   });
 
+  const getBackendUrl = () => {
+    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+      return "http://localhost:8080";
+    }
+    return "https://smart-emotion-focus-journal-backend.onrender.com";
+  };
+
   useEffect(() => {
     loadTelemetry();
   }, []);
 
-  const loadTelemetry = () => {
-    try {
-      const stored = localStorage.getItem('journal_telemetry_logs');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.length > 0) {
-          setLogs(parsed);
-          calculateStats(parsed);
-          return;
+  const loadTelemetry = async () => {
+    const backendUrl = getBackendUrl();
+    const token = localStorage.getItem('journal_auth_token');
+    
+    // Local storage fallback loader
+    const loadLocalFallback = () => {
+      try {
+        const stored = localStorage.getItem('journal_telemetry_logs');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.length > 0) {
+            setLogs(parsed);
+            calculateStats(parsed);
+            return;
+          }
         }
+        setLogs(INITIAL_LOGS);
+        calculateStats(INITIAL_LOGS);
+      } catch (err) {
+        console.error("Local storage read failed:", err);
+        setLogs(INITIAL_LOGS);
+        calculateStats(INITIAL_LOGS);
       }
-      // Seed default logs if empty
-      setLogs(INITIAL_LOGS);
-      calculateStats(INITIAL_LOGS);
+    };
+
+    // If no authorization token is found, fall back immediately to local storage
+    if (!token) {
+      loadLocalFallback();
+      return;
+    }
+
+    try {
+      console.log('Fetching live telemetry logs from:', `${backendUrl}/api/monitor/metrics`);
+      const response = await fetch(`${backendUrl}/api/monitor/metrics`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP status ${response.status}`);
+      }
+
+      const backendMetrics = await response.json(); // array of models.LlmMetric
+
+      if (Array.isArray(backendMetrics) && backendMetrics.length > 0) {
+        const mappedLogs = backendMetrics.map((metric, i) => {
+          let cognitiveLoad = 50;
+          // Parse score percentage from the decision score string (ErrorLog)
+          const re = /(\d+)%/;
+          const match = (metric.error_log || "").match(re);
+          if (match) {
+            cognitiveLoad = parseInt(match[1], 10);
+          } else {
+            // fallback load based on index
+            cognitiveLoad = Math.min(100, Math.max(15, 85 - (i * 12)));
+          }
+
+          // Extract text snippet from response string
+          let textSnippet = metric.error_log || "WebGPU inference metrics synced.";
+          const adviceIndex = textSnippet.indexOf(" - ");
+          if (adviceIndex !== -1) {
+            textSnippet = textSnippet.substring(adviceIndex + 3);
+          }
+
+          return {
+            id: metric.id.toString(),
+            timestamp: new Date(metric.created_at).toTimeString().split(' ')[0],
+            prompt: textSnippet,
+            load: cognitiveLoad,
+            latency: metric.latency_ms > 1000 ? `${(metric.latency_ms / 1000).toFixed(2)}s` : `${metric.latency_ms}ms`,
+            tokens: metric.token_count || 120,
+            cache: metric.latency_ms > 1500 ? "MISS" : "HIT",
+            status: "SUCCESS"
+          };
+        });
+
+        setLogs(mappedLogs);
+        calculateStats(mappedLogs);
+        
+        // Cache in local storage for instant offline viewing
+        localStorage.setItem('journal_telemetry_logs', JSON.stringify(mappedLogs));
+      } else {
+        loadLocalFallback();
+      }
     } catch (err) {
-      console.error("Failed to load telemetry:", err);
-      setLogs(INITIAL_LOGS);
-      calculateStats(INITIAL_LOGS);
+      console.warn("Failed to load telemetry from database. Using local cache. Error:", err.message);
+      loadLocalFallback();
     }
   };
 
@@ -92,7 +171,6 @@ export default function DashboardPage() {
     const totalWithCacheInfo = logList.filter(log => log.cache).length;
     const cacheHitRatio = totalWithCacheInfo > 0 ? parseFloat(((hits / totalWithCacheInfo) * 100).toFixed(1)) : 92.4;
 
-    // VRAM allocation approximation (based on model loading runs)
     const hasActiveModelRuns = logList.length > 0;
 
     setStats({
@@ -108,9 +186,9 @@ export default function DashboardPage() {
     setBackendStatus('checking');
     console.log('--- Syncing Dashboard with Backend & LocalStorage ---');
 
-    // Ping the actual live Render backend
+    const backendUrl = getBackendUrl();
     try {
-      const response = await fetch("https://smart-emotion-focus-journal-backend.onrender.com/health", {
+      const response = await fetch(`${backendUrl}/health`, {
         method: "GET",
         headers: { "Accept": "application/json" }
       });
@@ -124,16 +202,17 @@ export default function DashboardPage() {
       setBackendStatus('offline');
     }
 
-    // Wait a brief simulated interval for visual confirmation
-    setTimeout(() => {
-      loadTelemetry();
-      setRefreshing(false);
-      console.log('Dashboard refreshed successfully.');
-    }, 600);
+    // Refresh telemetry logs
+    await loadTelemetry();
+    setRefreshing(false);
+    console.log('Dashboard refreshed successfully.');
   };
 
-  const handleClearLogs = () => {
+  const handleClearLogs = async () => {
     console.log('Clearing telemetry logs from dashboard view...');
+    const backendUrl = getBackendUrl();
+    const token = localStorage.getItem('journal_auth_token');
+
     try {
       localStorage.removeItem('journal_telemetry_logs');
       setLogs([]);
@@ -143,8 +222,18 @@ export default function DashboardPage() {
         cacheHitRatio: 100,
         vramAllocatedGB: 0
       });
+
+      // Clear from database if authenticated
+      if (token) {
+        await fetch(`${backendUrl}/api/monitor/clear`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      }
     } catch (err) {
-      console.error("Failed to clear localStorage:", err);
+      console.error("Failed to clear metrics:", err);
     }
   };
 
@@ -211,19 +300,19 @@ export default function DashboardPage() {
         {/* Actions */}
         <div className="flex items-center gap-3">
           {backendStatus === 'healthy' ? (
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5 animate-pulse-slow">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping"></span>
               <span>Backend Connected</span>
             </span>
           ) : backendStatus === 'offline' ? (
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-450 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-rose-400 rounded-full"></span>
               <span>Backend Offline</span>
             </span>
           ) : (
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-zinc-500/10 border border-zinc-800 text-zinc-400 flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-zinc-550/10 border border-zinc-800 text-zinc-400 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-pulse"></span>
-              <span>Checking Ping...</span>
+              <span>Checking Status...</span>
             </span>
           )}
 
@@ -259,7 +348,7 @@ export default function DashboardPage() {
             <h3 className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
               {stats.tokensProcessed.toLocaleString()}
             </h3>
-            <p className="text-[10px] text-zinc-500 font-semibold mt-1">
+            <p className="text-[10px] text-zinc-550 font-semibold mt-1">
               Accumulated model runs
             </p>
           </div>
@@ -305,7 +394,7 @@ export default function DashboardPage() {
         <div className="glass-panel rounded-2xl p-5 border-zinc-850 hover:border-zinc-800 transition-colors">
           <div className="flex justify-between items-start">
             <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Engine Status</span>
-            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-450">
               <Cpu className="w-4 h-4" />
             </div>
           </div>
@@ -315,9 +404,9 @@ export default function DashboardPage() {
             </h3>
             <p className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1 mt-1">
               {stats.vramAllocatedGB > 0 ? (
-                <span className="text-emerald-400">Gemma-2B allocated</span>
+                <span className="text-emerald-400 animate-pulse">Gemma-2B allocated</span>
               ) : (
-                <span className="text-zinc-500">Unloaded from VRAM</span>
+                <span className="text-zinc-550">Unloaded from VRAM</span>
               )}
             </p>
           </div>
@@ -412,7 +501,7 @@ export default function DashboardPage() {
               </svg>
             )}
           </div>
-          <div className="flex justify-between text-[9px] text-zinc-500 font-mono tracking-wider">
+          <div className="flex justify-between text-[9px] text-zinc-550 font-mono tracking-wider">
             {recentLogs.map((log, i) => (
               <span key={i}>Run #{log.id}</span>
             ))}
