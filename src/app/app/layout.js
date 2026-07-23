@@ -18,6 +18,7 @@ import {
   Star,
   Sliders
 } from 'lucide-react';
+import { getBackendUrl } from '@/lib/api';
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();
@@ -32,40 +33,6 @@ export default function AppLayout({ children }) {
   const [feedback, setFeedback] = useState({ rating: 5, comment: '' });
   const [feedbackStatus, setFeedbackStatus] = useState(null); // null, success, error
   const [actionStatus, setActionStatus] = useState(null);
-
-  const getBackendUrl = () => {
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-      return "http://localhost:8080";
-    }
-    return "https://smart-emotion-focus-journal-backend.onrender.com";
-  };
-
-  useEffect(() => {
-    // Read User Profile info from Storage
-    const storedUser = localStorage.getItem('journal_auth_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.email) setUserEmail(parsed.email);
-      } catch (e) {
-        console.error("Failed to parse stored user:", e);
-      }
-    }
-
-    // Load Version info and Config preferences from backend
-    fetchVersionAndConfig();
-  }, []);
-
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const root = document.documentElement;
-      if (configSettings.theme === 'light') {
-        root.classList.add('light');
-      } else {
-        root.classList.remove('light');
-      }
-    }
-  }, [configSettings.theme]);
 
   const fetchVersionAndConfig = async () => {
     const backendUrl = getBackendUrl();
@@ -102,6 +69,33 @@ export default function AppLayout({ children }) {
       }
     }
   };
+
+  useEffect(() => {
+    // Read User Profile info from Storage
+    const storedUser = localStorage.getItem('journal_auth_user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.email) setUserEmail(parsed.email);
+      } catch (e) {
+        console.error("Failed to parse stored user:", e);
+      }
+    }
+
+    // Load Version info and Config preferences from backend
+    fetchVersionAndConfig();
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (configSettings.theme === 'light') {
+        root.classList.add('light');
+      } else {
+        root.classList.remove('light');
+      }
+    }
+  }, [configSettings.theme]);
 
   const handleUpdateConfig = async (updated) => {
     setConfigSettings(updated);

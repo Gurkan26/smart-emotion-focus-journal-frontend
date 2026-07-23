@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getBackendUrl } from '@/lib/api';
 import { 
   Activity, 
   Cpu, 
@@ -43,16 +44,7 @@ export default function DashboardPage() {
     vramAllocatedGB: 1.48
   });
 
-  const getBackendUrl = () => {
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-      return "http://localhost:8080";
-    }
-    return "https://smart-emotion-focus-journal-backend.onrender.com";
-  };
 
-  useEffect(() => {
-    loadTelemetry();
-  }, []);
 
   const loadTelemetry = async () => {
     const backendUrl = getBackendUrl();
@@ -141,7 +133,7 @@ export default function DashboardPage() {
       }
 
       if (Array.isArray(backendMetrics) && backendMetrics.length > 0) {
-        const mappedLogs = backendMetrics.map((metric, i) => {
+        let mappedLogs = backendMetrics.map((metric, i) => {
           let cognitiveLoad = 50;
           // Parse score percentage from the decision score string (ErrorLog)
           const re = /(\d+)%/;
@@ -171,6 +163,10 @@ export default function DashboardPage() {
           };
         });
 
+        if (mappedLogs.length === 0) {
+          mappedLogs = INITIAL_LOGS;
+        }
+
         setLogs(mappedLogs);
         calculateStats(mappedLogs);
         
@@ -185,48 +181,9 @@ export default function DashboardPage() {
     }
   };
 
-  const calculateStats = (logList) => {
-    if (!logList || logList.length === 0) return;
-
-    // Tokens Processed
-    const totalTokens = logList.reduce((acc, log) => acc + (log.tokens || 0), 0);
-    
-    // Average Latency
-    let totalLatencyMs = 0;
-    let validLatencyCount = 0;
-
-    logList.forEach(log => {
-      let lat = log.latency || "";
-      let ms = 0;
-      if (lat.endsWith("ms")) {
-        ms = parseFloat(lat);
-      } else if (lat.endsWith("s")) {
-        ms = parseFloat(lat) * 1000;
-      } else {
-        ms = parseFloat(lat) || 0;
-      }
-      if (ms > 0) {
-        totalLatencyMs += ms;
-        validLatencyCount++;
-      }
-    });
-
-    const avgLatencyMs = validLatencyCount > 0 ? Math.round(totalLatencyMs / validLatencyCount) : 142;
-
-    // Cache Hit Ratio
-    const hits = logList.filter(log => log.cache === 'HIT').length;
-    const totalWithCacheInfo = logList.filter(log => log.cache).length;
-    const cacheHitRatio = totalWithCacheInfo > 0 ? parseFloat(((hits / totalWithCacheInfo) * 100).toFixed(1)) : 92.4;
-
-    const hasActiveModelRuns = logList.length > 0;
-
-    setStats({
-      tokensProcessed: totalTokens > 0 ? totalTokens : 184210,
-      avgLatencyMs,
-      cacheHitRatio,
-      vramAllocatedGB: hasActiveModelRuns ? 1.48 : 0
-    });
-  };
+  useEffect(() => {
+    loadTelemetry();
+  }, []);
 
   const handleRefreshLogs = async () => {
     setRefreshing(true);

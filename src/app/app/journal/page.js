@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getBackendUrl, getAuthHeaders } from '@/lib/api';
 import { 
   Sparkles, 
   Send, 
@@ -48,167 +49,58 @@ export default function JournalPage() {
   const [engineError, setEngineError] = useState(null);
 
   useEffect(() => {
-    let active = true;
-    let loadedEngine = null;
-
-    async function initWebLLM() {
-      try {
-        if (!navigator.gpu) {
-          throw new Error("WebGPU is not supported by your browser. Please use Chrome, Edge or Safari 18+.");
-        }
-
-        setEngineStatus('Loading Web-LLM client module...');
-        const webLLM = await import('@mlc-ai/web-llm');
-        
-        if (!active) return;
-
-        setEngineStatus('Downloading Gemma-2B-it weights (cached after first run)...');
-        // gemma-2b-it-q4f16_1-MLC is the lightweight Gemma model recommended
-        const selectedModel = 'gemma-2b-it-q4f16_1-MLC';
-
-        const initProgressCallback = (report) => {
-          if (!active) return;
-          console.log('Web-LLM Loading Progress:', report);
-          setEngineProgress(report.progress || 0);
-          setEngineStatus(report.text || 'Loading model weights...');
-        };
-
-        loadedEngine = await webLLM.CreateMLCEngine(selectedModel, {
-          initProgressCallback,
-        });
-
-        if (active) {
-          setEngine(loadedEngine);
-          setEngineLoading(false);
-          setEngineStatus('Gemma-2B Local Model ready!');
-        }
-      } catch (err) {
-        console.error('Web-LLM Engine Init Failed:', err);
-        if (active) {
-          setEngineLoading(false);
-          setWebGpuSupported(false);
-          setEngineError(err.message || 'Failed to initialize local model.');
-
-          // Log error to backend (POST /api/monitor/error)
-          try {
-            const token = localStorage.getItem('journal_auth_token');
-            const headers = { "Content-Type": "application/json" };
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-            
-            const backendUrl = typeof window !== "undefined" && window.location.hostname === "localhost"
-              ? "http://localhost:8080"
-              : "https://smart-emotion-focus-journal-backend.onrender.com";
-
-            await fetch(`${backendUrl}/api/monitor/error`, {
-              method: "POST",
-              headers,
-              body: JSON.stringify({
-                error_log: err.message || "Failed to initialize WebGPU/Gemma local model."
-              })
-            });
-          } catch (e) {
-            console.error("Failed to post error log:", e);
-          }
-        }
-      }
-    }
-
-    initWebLLM();
-
-    return () => {
-      active = false;
-    };
+    setEngineStatus('Backend LLM Engine Ready');
+    setEngineLoading(false);
+    setEngineProgress(100);
+    setWebGpuSupported(true);
   }, []);
+
+  // Prevent accidental reload or tab close while LLM analysis is active
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (analyzing) {
+        e.preventDefault();
+        e.returnValue = "LLM analysis is currently in progress. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [analyzing]);
 
   const wordCount = journalText.trim() === '' ? 0 : journalText.trim().split(/\s+/).length;
   const charCount = journalText.length;
 
   const handleSuggestionClick = (text) => {
-    if (engineLoading || !webGpuSupported) return;
     setJournalText(text);
   };
 
   const handleAnalyze = async (e) => {
     e.preventDefault();
-    if (journalText.trim() === '' || !engine) return;
+    if (journalText.trim() === '') return;
 
     setAnalyzing(true);
     setAnalysisResult(null);
 
-    const startTime = performance.now();
-    console.log('--- Local Gemma-2B Inference Started ---');
+    const backendUrl = getBackendUrl();
+    const fetchHeaders = getAuthHeaders();
 
     try {
-      const systemPrompt = "You are an emotional state analysis assistant. Read the user's text and only return a Decision Score in this format: 'Cognitive Load Score: %X - [One sentence advice]'. Do not include any other conversational filler, introductions, or pleasantries.";
-
-      const response = await engine.chat.completions.create({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: journalText }
-        ],
-        temperature: 0.1, // low temperature for structured formats
+      // 1. Send text to Go Backend LLM Analysis API
+      const res = await fetch(`${backendUrl}/api/journal/analyze`, {
+        method: "POST",
+        headers: fetchHeaders,
+        body: JSON.stringify({ content: contentToSend })
       });
 
-      const replyText = (response.choices[0].message.content || "").trim();
-      const endTime = performance.now();
-      const latencyMs = endTime - startTime;
-
-      console.log('Raw model output:', replyText);
-
-      // Extract tokens
-      const promptTokens = response.usage?.prompt_tokens || Math.floor(journalText.length / 4) + 12;
-      const completionTokens = response.usage?.completion_tokens || Math.floor(replyText.length / 4) + 5;
-      const totalTokens = promptTokens + completionTokens;
-
-      // Parse the reply: e.g. "Cognitive Load Score: 75% - Take a deep breath."
-      let cognitiveLoad = 50; // fallback default
-      let suggestion = replyText;
-
-      // Match format: Cognitive Load Score: X% - Advice
-      const match = replyText.match(/Cognitive\s+Load\s+Score:\s*(\d+)%?\s*-\s*(.*)/i);
-      if (match) {
-        cognitiveLoad = parseInt(match[1], 10);
-        suggestion = match[2].trim();
-      } else {
-        // Fallback checks
-        const fallbackPercent = replyText.match(/(\d+)%/);
-        if (fallbackPercent) {
-          cognitiveLoad = parseInt(fallbackPercent[1], 10);
-        }
-        const parts = replyText.split('-');
-        if (parts.length > 1) {
-          suggestion = parts.slice(1).join('-').trim();
-        }
+      if (!res.ok) {
+        throw new Error("Backend LLM analysis request failed.");
       }
 
-      // Safeguard values
-      cognitiveLoad = Math.min(100, Math.max(0, cognitiveLoad));
-      const stressLevel = Math.min(100, Math.max(0, Math.round(cognitiveLoad * 1.1 - 10)));
-      const focusLevel = Math.min(100, Math.max(0, Math.round(100 - cognitiveLoad * 0.8)));
-
-      let dominantEmotion = "Calm & Centered";
-      if (cognitiveLoad > 75) {
-        dominantEmotion = "High Cognitive Fatigue";
-      } else if (cognitiveLoad > 45) {
-        dominantEmotion = "Distracted / Restless";
-      }
-
-      const finalResult = {
-        cognitiveLoad,
-        focusLevel,
-        stressLevel,
-        dominantEmotion,
-        suggestion,
-        metrics: {
-          inferenceTimeSec: (latencyMs / 1000).toFixed(2),
-          tokensSec: (totalTokens / (latencyMs / 1000)).toFixed(1),
-          promptTokens,
-          completionTokens,
-          totalTokens,
-          latencyMs: Math.round(latencyMs)
-        }
-      };
-
+      const finalResult = await res.json();
       setAnalysisResult(finalResult);
 
       // Save to localStorage for Dashboard integration
@@ -217,78 +109,37 @@ export default function JournalPage() {
         const newLog = {
           id: Math.floor(Math.random() * 1000 + 2000).toString(),
           timestamp: new Date().toTimeString().split(' ')[0],
-          prompt: journalText,
-          load: cognitiveLoad,
-          latency: `${(latencyMs / 1000).toFixed(2)}s`,
-          tokens: totalTokens,
+          prompt: contentToSend,
+          load: finalResult.cognitiveLoad,
+          latency: `${finalResult.metrics.inferenceTimeSec}s`,
+          tokens: finalResult.metrics.totalTokens,
           cache: "MISS",
           status: 'SUCCESS'
         };
         const updatedLogs = [newLog, ...storedLogs].slice(0, 50);
         localStorage.setItem('journal_telemetry_logs', JSON.stringify(updatedLogs));
-        console.log('Saved telemetry run to localStorage:', newLog);
       } catch (err) {
         console.error('Failed to save run to localStorage:', err);
       }
 
-      const contentToSend = journalText;
-      // Reset the input area
-      setJournalText('');
-
-      // Determine backend URL and auth headers
-      const getBackendUrl = () => {
-        if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-          return "http://localhost:8080";
-        }
-        return "https://smart-emotion-focus-journal-backend.onrender.com";
-      };
-
-      const backendUrl = getBackendUrl();
-      const token = localStorage.getItem('journal_auth_token');
-      const fetchHeaders = {
-        "Content-Type": "application/json"
-      };
-      if (token) {
-        fetchHeaders["Authorization"] = `Bearer ${token}`;
-      }
-
-      // Send to Backend 1: Raw LLM metrics
+      // 2. Save Journal Entry to Backend
       try {
-        console.log('Sending metrics to backend...');
-        const metricsRes = await fetch(`${backendUrl}/api/monitor/metrics`, {
-          method: "POST",
-          headers: fetchHeaders,
-          body: JSON.stringify({
-            latency_ms: Math.round(latencyMs),
-            token_count: totalTokens,
-            decision_score: replyText,
-            status: "success"
-          })
-        });
-        console.log('Metrics POST response status:', metricsRes.status);
-      } catch (err) {
-        console.error("Failed to post metrics monitoring:", err);
-      }
-
-      // Send to Backend 2: Journal Entry
-      try {
-        console.log('Sending journal entry to backend...');
-        const journalRes = await fetch(`${backendUrl}/api/journal`, {
+        await fetch(`${backendUrl}/api/journal`, {
           method: "POST",
           headers: fetchHeaders,
           body: JSON.stringify({
             content: contentToSend,
-            llm_response: replyText
+            llm_response: `Cognitive Load Score: ${finalResult.cognitiveLoad}% - ${finalResult.suggestion}`
           })
         });
-        console.log('Journal POST response status:', journalRes.status);
       } catch (err) {
         console.error("Failed to post journal entry:", err);
       }
 
+      setJournalText('');
     } catch (error) {
-      console.error("Local Gemma analysis failed:", error);
-      alert("Local AI analysis failed. Please check developer console. Error: " + error.message);
+      console.error("Backend LLM analysis failed:", error);
+      alert("AI analysis failed: " + error.message);
     } finally {
       setAnalyzing(false);
     }

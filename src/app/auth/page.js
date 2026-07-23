@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { getBackendUrl } from '@/lib/api';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -15,13 +16,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-
-  const getBackendUrl = () => {
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-      return "http://localhost:8080";
-    }
-    return "https://smart-emotion-focus-journal-backend.onrender.com";
-  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
