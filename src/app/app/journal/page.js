@@ -85,6 +85,7 @@ export default function JournalPage() {
     setAnalyzing(true);
     setAnalysisResult(null);
 
+    const contentToSend = journalText;
     const backendUrl = getBackendUrl();
     const fetchHeaders = getAuthHeaders();
 
