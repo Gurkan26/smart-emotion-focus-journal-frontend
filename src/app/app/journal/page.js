@@ -9,6 +9,7 @@ import {
   Zap, 
   Clock, 
   CheckCircle,
+  XCircle,
   HelpCircle,
   RefreshCw,
   Gauge
@@ -48,11 +49,36 @@ export default function JournalPage() {
   const [webGpuSupported, setWebGpuSupported] = useState(true);
   const [engineError, setEngineError] = useState(null);
 
+  // Server Status State
+  const [backendStatus, setBackendStatus] = useState('checking'); // healthy | offline | checking
+
   useEffect(() => {
     setEngineStatus('Backend LLM Engine Ready');
     setEngineLoading(false);
     setEngineProgress(100);
     setWebGpuSupported(true);
+
+    // Initial server health check
+    const checkServerHealth = async () => {
+      const backendUrl = getBackendUrl();
+      try {
+        const res = await fetch(`${backendUrl}/health`, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+        if (res.ok) {
+          setBackendStatus('healthy');
+        } else {
+          setBackendStatus('offline');
+        }
+      } catch (err) {
+        setBackendStatus('offline');
+      }
+    };
+
+    checkServerHealth();
+    const interval = setInterval(checkServerHealth, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Prevent accidental reload or tab close while LLM analysis is active
@@ -87,14 +113,20 @@ export default function JournalPage() {
 
     const contentToSend = journalText;
     const backendUrl = getBackendUrl();
-    const fetchHeaders = getAuthHeaders();
+    const fetchHeaders = getAuthHeaders(null, {
+      "Accept-Language": "en-US,en;q=0.9"
+    });
 
     try {
-      // 1. Send text to Go Backend LLM Analysis API
+      // 1. Send text to Go Backend LLM Analysis API (with language: "en")
       const res = await fetch(`${backendUrl}/api/journal/analyze`, {
         method: "POST",
         headers: fetchHeaders,
-        body: JSON.stringify({ content: contentToSend })
+        body: JSON.stringify({ 
+          content: contentToSend,
+          language: "en",
+          prompt_instruction: "Respond strictly in English with concise cognitive load metrics and actionable insight."
+        })
       });
 
       if (!res.ok) {
@@ -160,14 +192,36 @@ export default function JournalPage() {
 
   return (
     <div className="space-y-8">
-      {/* Title Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
-          Daily Journal & Reflection
-        </h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          Express your state of mind. Our local AI will calculate decision scoring and cognitive loads.
-        </p>
+      {/* Title Header with Server Status Checkmark Tick */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+            Daily Journal & Reflection
+          </h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            Express your state of mind. Our local AI will calculate decision scoring and cognitive loads.
+          </p>
+        </div>
+
+        {/* Server Status Indicator Tick */}
+        <div className="flex items-center gap-2 shrink-0">
+          {backendStatus === 'healthy' ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold shadow-sm">
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 animate-pulse-slow" />
+              <span>Server Active</span>
+            </div>
+          ) : backendStatus === 'offline' ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-semibold shadow-sm">
+              <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Server Offline</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-800/80 border border-zinc-700/50 text-zinc-400 text-xs font-semibold shadow-sm">
+              <RefreshCw className="w-3.5 h-3.5 text-zinc-400 animate-spin shrink-0" />
+              <span>Checking Server...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
