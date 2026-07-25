@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
-import { getBackendUrl } from '@/lib/api';
+import { getBackendUrl, clearAllUserStorage, getUserId } from '@/lib/api';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -57,6 +57,12 @@ export default function AuthPage() {
 
       if (isLogin) {
         console.log('Login successful!', data);
+        // Clear previous user's data if a different user is logging in
+        const previousUserId = getUserId();
+        const newUserId = data.user?.id;
+        if (previousUserId && newUserId && previousUserId !== newUserId) {
+          clearAllUserStorage(previousUserId);
+        }
         // Store Session token in local storage
         if (data.token) {
           localStorage.setItem('journal_auth_token', data.token);

@@ -18,7 +18,7 @@ import {
   Star,
   Sliders
 } from 'lucide-react';
-import { getBackendUrl } from '@/lib/api';
+import { getBackendUrl, clearAllUserStorage } from '@/lib/api';
 
 export default function AppLayout({ children }) {
   const pathname = usePathname();
@@ -153,26 +153,37 @@ export default function AppLayout({ children }) {
     setActionStatus('deleting');
 
     try {
+      let deleteSuccess = true;
       // DELETE /delete (backend handles account deletion)
       if (token) {
-        await fetch(`${backendUrl}/delete`, {
+        const res = await fetch(`${backendUrl}/delete`, {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${token}` }
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          deleteSuccess = false;
+          setActionStatus(null);
+          alert(`Failed to delete account: ${errData.message || 'Server error'}`);
+          return;
+        }
       }
       
-      localStorage.removeItem('journal_auth_token');
-      localStorage.removeItem('journal_auth_user');
-      localStorage.removeItem('journal_telemetry_logs');
-      
-      setActionStatus(null);
-      setShowSettings(false);
-      router.push('/auth');
+      if (deleteSuccess) {
+        // Clear all user-specific storage
+        clearAllUserStorage();
+        localStorage.removeItem('journal_auth_token');
+        localStorage.removeItem('journal_auth_user');
+        localStorage.removeItem('journal_telemetry_logs');
+        
+        setActionStatus(null);
+        setShowSettings(false);
+        router.push('/auth');
+      }
     } catch (err) {
       console.error("Failed to delete account:", err);
-      alert("Error deleting account. Wiping local session.");
-      localStorage.clear();
-      router.push('/auth');
+      alert("Error deleting account. Please try again.");
+      setActionStatus(null);
     }
   };
 
@@ -193,6 +204,8 @@ export default function AppLayout({ children }) {
       console.warn("Logout request failed:", err);
     }
 
+    // Clear all user-specific cached data
+    clearAllUserStorage();
     localStorage.removeItem('journal_auth_token');
     localStorage.removeItem('journal_auth_user');
     router.push('/auth');
@@ -200,10 +213,10 @@ export default function AppLayout({ children }) {
 
   const navItems = [
     {
-      name: 'Journal Entry',
+      name: 'Prompt Optimizer',
       href: '/app/journal',
-      icon: BookOpen,
-      description: 'Write & analyze emotion/focus'
+      icon: Sparkles,
+      description: 'AI prompt engineering & optimization'
     },
     {
       name: 'Monitoring Dashboard',

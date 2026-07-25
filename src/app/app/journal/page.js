@@ -1,64 +1,108 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { getBackendUrl, getAuthHeaders } from '@/lib/api';
+import { getBackendUrl, getAuthHeaders, getUserStorageKey } from '@/lib/api';
 import { 
   Sparkles, 
   Send, 
   Brain, 
-  Activity, 
   Zap, 
   Clock, 
   CheckCircle,
   XCircle,
-  HelpCircle,
   RefreshCw,
-  Gauge
+  Target,
+  Code,
+  GraduationCap,
+  Sliders,
+  Copy,
+  Check,
+  ArrowRight,
+  History
 } from 'lucide-react';
 
-const SUGGESTIONS = [
+const TEMPLATES = [
   {
-    title: "Focus Reflection",
-    text: "I am trying to study React components, but my mind keeps wandering to social media. I feel slightly tired, and I've been working for 3 hours without a break.",
+    id: 'accurate',
+    name: 'En Doğru Sonuç',
+    description: 'Prompt\'u en hassas, net ve eksiksiz yanıt verecek şekilde yapılandırır.',
+    icon: Target,
+    badge: 'High Precision',
+    color: 'purple'
+  },
+  {
+    id: 'minimal',
+    name: 'Minimum Token',
+    description: 'Gereksiz kelimeleri çıkartıp token tüketimini ve maliyeti en aza indirir.',
     icon: Zap,
-    tag: "Distracted / High Load"
+    badge: 'Token Saver',
+    color: 'emerald'
   },
   {
-    title: "Deep Flow State",
-    text: "I woke up early, had a cup of coffee, and immediately started working on design code. The interface looks amazing, and I feel completely immersed in my work. Time is flying.",
+    id: 'creative',
+    name: 'En Yaratıcı',
+    description: 'Modelin zengin, hayal gücü yüksek ve detaylı çıktılar üretmesini sağlar.',
     icon: Sparkles,
-    tag: "High Focus / Low Stress"
+    badge: 'High Creativity',
+    color: 'amber'
   },
   {
-    title: "Pre-Exam Stress",
-    text: "I have a big presentation in Go programming tomorrow. My heart is racing a bit, and I find it hard to structure my thoughts. I want to make sure I don't miss any requirements.",
-    icon: Activity,
-    tag: "High Anxiety"
+    id: 'code',
+    name: 'Kod Odaklı',
+    description: 'Yazılım geliştirme görevleri için üretim kalitesinde kod spesifikasyonuna çevirir.',
+    icon: Code,
+    badge: 'Developer Pack',
+    color: 'indigo'
+  },
+  {
+    id: 'academic',
+    name: 'Akademik & Araştırma',
+    description: 'Resmi terminoloji ve metodolojik analiz yapısına dönüştürür.',
+    icon: GraduationCap,
+    badge: 'Research Grade',
+    color: 'rose'
+  },
+  {
+    id: 'custom',
+    name: 'Özel Talimat',
+    description: 'Sizin belirteceğiniz özel optimizasyon kuralına göre prompt\'u yeniden biçimlendirir.',
+    icon: Sliders,
+    badge: 'Custom Rule',
+    color: 'sky'
   }
 ];
 
-export default function JournalPage() {
-  const [journalText, setJournalText] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
+const SAMPLE_PROMPTS = [
+  {
+    title: "React Component",
+    text: "Bana bir React kullanılarak yapılmış modal bileşeni yaz. İçinde animasyon olsun ve dark mode uyumlu olsun.",
+    template: "code"
+  },
+  {
+    title: "Müşteri E-postası",
+    text: "Müşterimize geciken sipariş için çok özür dileyen ve %15 indirim kuponu veren bir e-posta yazabilir misin?",
+    template: "accurate"
+  },
+  {
+    title: "Veritabanı Analizi",
+    text: "PostgreSQL'de yavaş çalışan sorguları nasıl tespit edip indeksleme yapabilirim? Adım adım anlat.",
+    template: "code"
+  }
+];
 
-  // Web-LLM states
-  const [engine, setEngine] = useState(null);
-  const [engineLoading, setEngineLoading] = useState(true);
-  const [engineProgress, setEngineProgress] = useState(0);
-  const [engineStatus, setEngineStatus] = useState('Initializing WebGPU...');
-  const [webGpuSupported, setWebGpuSupported] = useState(true);
-  const [engineError, setEngineError] = useState(null);
+export default function PromptOptimizerPage() {
+  const [promptText, setPromptText] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('accurate');
+  const [customInstruction, setCustomInstruction] = useState('');
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [copied, setCopied] = useState(false);
 
   // Server Status State
-  const [backendStatus, setBackendStatus] = useState('checking'); // healthy | offline | checking
+  const [backendStatus, setBackendStatus] = useState('checking');
 
   useEffect(() => {
-    setEngineStatus('Backend LLM Engine Ready');
-    setEngineLoading(false);
-    setEngineProgress(100);
-    setWebGpuSupported(true);
-
-    // Initial server health check
+    // Check server health
     const checkServerHealth = async () => {
       const backendUrl = getBackendUrl();
       try {
@@ -77,133 +121,120 @@ export default function JournalPage() {
     };
 
     checkServerHealth();
+    fetchHistory();
+
     const interval = setInterval(checkServerHealth, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Prevent accidental reload or tab close while LLM analysis is active
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (analyzing) {
-        e.preventDefault();
-        e.returnValue = "LLM analysis is currently in progress. Are you sure you want to leave?";
-        return e.returnValue;
+  const fetchHistory = async () => {
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      const res = await fetch(`${backendUrl}/api/prompt/history`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setHistory(data);
       }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [analyzing]);
-
-  const wordCount = journalText.trim() === '' ? 0 : journalText.trim().split(/\s+/).length;
-  const charCount = journalText.length;
-
-  const handleSuggestionClick = (text) => {
-    setJournalText(text);
+    } catch (err) {
+      console.warn("Could not fetch prompt history from backend:", err);
+    }
   };
 
-  const handleAnalyze = async (e) => {
+  const wordCount = promptText.trim() === '' ? 0 : promptText.trim().split(/\s+/).length;
+  const charCount = promptText.length;
+  const estTokens = Math.max(1, Math.round(charCount / 4));
+
+  const handleSampleClick = (sample) => {
+    setPromptText(sample.text);
+    setSelectedTemplate(sample.template);
+  };
+
+  const handleOptimize = async (e) => {
     e.preventDefault();
-    if (journalText.trim() === '') return;
+    if (promptText.trim() === '') return;
 
-    setAnalyzing(true);
-    setAnalysisResult(null);
+    setOptimizing(true);
+    setOptimizationResult(null);
+    setCopied(false);
 
-    const contentToSend = journalText;
     const backendUrl = getBackendUrl();
-    const fetchHeaders = getAuthHeaders(null, {
-      "Accept-Language": "en-US,en;q=0.9"
-    });
+    const fetchHeaders = getAuthHeaders();
 
     try {
-      // 1. Send text to Go Backend LLM Analysis API (with language: "en")
-      const res = await fetch(`${backendUrl}/api/journal/analyze`, {
+      const res = await fetch(`${backendUrl}/api/prompt/optimize`, {
         method: "POST",
         headers: fetchHeaders,
         body: JSON.stringify({ 
-          content: contentToSend,
-          language: "en",
-          prompt_instruction: "Respond strictly in English with concise cognitive load metrics and actionable insight."
+          prompt: promptText,
+          template: selectedTemplate,
+          custom_instruction: selectedTemplate === 'custom' ? customInstruction : ''
         })
       });
 
       if (!res.ok) {
-        throw new Error("Backend LLM analysis request failed.");
+        throw new Error("Prompt optimizasyon isteği başarısız oldu.");
       }
 
-      const finalResult = await res.json();
-      setAnalysisResult(finalResult);
+      const result = await res.json();
+      setOptimizationResult(result);
 
-      // Save to localStorage for Dashboard integration
+      // Save run to local telemetry cache for dashboard
       try {
-        const storedLogs = JSON.parse(localStorage.getItem('journal_telemetry_logs') || '[]');
+        const storageKey = getUserStorageKey('journal_telemetry_logs');
+        const storedLogs = JSON.parse(localStorage.getItem(storageKey) || '[]');
         const newLog = {
-          id: Math.floor(Math.random() * 1000 + 2000).toString(),
+          id: Math.floor(Math.random() * 1000 + 3000).toString(),
           timestamp: new Date().toTimeString().split(' ')[0],
-          prompt: contentToSend,
-          load: finalResult.cognitiveLoad,
-          latency: `${finalResult.metrics.inferenceTimeSec}s`,
-          tokens: finalResult.metrics.totalTokens,
+          prompt: `${selectedTemplate.toUpperCase()}: ${promptText.substring(0, 40)}...`,
+          load: Math.abs(Math.round(result.tokenSavingsPct || 25)),
+          latency: `${result.metrics.inferenceTimeSec}s`,
+          tokens: result.metrics.totalTokens,
           cache: "MISS",
           status: 'SUCCESS'
         };
         const updatedLogs = [newLog, ...storedLogs].slice(0, 50);
-        localStorage.setItem('journal_telemetry_logs', JSON.stringify(updatedLogs));
+        localStorage.setItem(storageKey, JSON.stringify(updatedLogs));
       } catch (err) {
         console.error('Failed to save run to localStorage:', err);
       }
 
-      // 2. Save Journal Entry to Backend
-      try {
-        await fetch(`${backendUrl}/api/journal`, {
-          method: "POST",
-          headers: fetchHeaders,
-          body: JSON.stringify({
-            content: contentToSend,
-            llm_response: `Cognitive Load Score: ${finalResult.cognitiveLoad}% - ${finalResult.suggestion}`
-          })
-        });
-      } catch (err) {
-        console.error("Failed to post journal entry:", err);
-      }
-
-      setJournalText('');
+      // Refresh history list
+      fetchHistory();
     } catch (error) {
-      console.error("Backend LLM analysis failed:", error);
-      alert("AI analysis failed: " + error.message);
+      console.error("Prompt optimization failed:", error);
+      alert("Optimizasyon hatası: " + error.message);
     } finally {
-      setAnalyzing(false);
+      setOptimizing(false);
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score < 40) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    if (score < 70) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-    return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-  };
-
-  const getProgressBarColor = (score) => {
-    if (score < 40) return 'bg-emerald-500 shadow-emerald-500/20';
-    if (score < 70) return 'bg-amber-500 shadow-amber-500/20';
-    return 'bg-rose-500 shadow-rose-500/20';
+  const handleCopy = () => {
+    if (!optimizationResult) return;
+    navigator.clipboard.writeText(optimizationResult.optimizedPrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
     <div className="space-y-8">
-      {/* Title Header with Server Status Checkmark Tick */}
+      {/* Title Header with Server Status */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
-            Daily Journal & Reflection
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+              AI Prompt Optimizer
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Gemma Engine
+            </span>
+          </div>
           <p className="text-zinc-400 text-sm mt-1">
-            Express your state of mind. Our local AI will calculate decision scoring and cognitive loads.
+            Ham prompt'larınızı yapay zeka modelleri için en doğru, tasarruflu veya yaratıcı formata dönüştürün.
           </p>
         </div>
 
-        {/* Server Status Indicator Tick */}
+        {/* Server Status Indicator */}
         <div className="flex items-center gap-2 shrink-0">
           {backendStatus === 'healthy' ? (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold shadow-sm">
@@ -218,297 +249,247 @@ export default function JournalPage() {
           ) : (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-800/80 border border-zinc-700/50 text-zinc-400 text-xs font-semibold shadow-sm">
               <RefreshCw className="w-3.5 h-3.5 text-zinc-400 animate-spin shrink-0" />
-              <span>Checking Server...</span>
+              <span>Checking...</span>
             </div>
           )}
         </div>
       </div>
 
+      {/* Main Grid: Left Input & Templates, Right Result */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Editor & Suggestions (7 cols) */}
+        {/* Left Column: Input Form & Template Selector (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Prompt Templates */}
+          {/* Template Selection Grid */}
           <div>
-            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-3">
-              Need inspiration? Choose a template:
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block mb-3">
+              1. Optimizasyon Şablonunu Seçin:
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {SUGGESTIONS.map((item, index) => {
-                const Icon = item.icon;
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {TEMPLATES.map((tmpl) => {
+                const Icon = tmpl.icon;
+                const isSelected = selectedTemplate === tmpl.id;
                 return (
                   <button
-                    key={index}
-                    onClick={() => handleSuggestionClick(item.text)}
-                    disabled={engineLoading || !webGpuSupported}
-                    className="p-3 bg-zinc-900/40 hover:bg-zinc-900/90 rounded-2xl border border-zinc-800/80 hover:border-purple-500/35 transition-all text-left group cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => setSelectedTemplate(tmpl.id)}
+                    className={`p-3.5 rounded-2xl border text-left transition-all relative group cursor-pointer ${
+                      isSelected
+                        ? 'bg-purple-600/15 border-purple-500/50 text-purple-200 shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/30'
+                        : 'bg-zinc-900/40 hover:bg-zinc-900/90 border-zinc-800/80 hover:border-zinc-700 text-zinc-400'
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="p-1 rounded-lg bg-zinc-800 text-purple-400 group-hover:text-purple-300">
+                      <div className={`p-2 rounded-xl ${isSelected ? 'bg-purple-500/20 text-purple-300' : 'bg-zinc-800 text-zinc-400'}`}>
                         <Icon className="w-4 h-4" />
                       </div>
-                      <span className="text-[9px] text-zinc-500 font-mono tracking-tighter bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
-                        {item.tag}
+                      <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                        isSelected ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                      }`}>
+                        {tmpl.badge}
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-zinc-300 group-hover:text-zinc-200">{item.title}</p>
-                    <p className="text-[10px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">{item.text}</p>
+                    <p className={`text-xs font-bold ${isSelected ? 'text-zinc-100' : 'text-zinc-300'}`}>
+                      {tmpl.name}
+                    </p>
+                    <p className="text-[10px] text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
+                      {tmpl.description}
+                    </p>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Journal Textarea Card */}
-          <div className="glass-panel rounded-3xl p-6 shadow-xl relative overflow-hidden min-h-[340px]">
-            {/* Loading Weights Overlay */}
-            {engineLoading && (
-              <div className="absolute inset-0 bg-zinc-950/85 backdrop-blur-md z-10 flex flex-col items-center justify-center p-6 space-y-6 text-center animate-fade-in">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center animate-pulse">
-                    <Brain className="w-6 h-6 text-purple-400" />
-                  </div>
-                </div>
-                <div className="space-y-2 max-w-sm">
-                  <h3 className="text-sm font-bold text-zinc-200">Initializing Local Gemma-2B Model</h3>
-                  <p className="text-xs text-zinc-450 leading-relaxed">
-                    Downloading model weights directly to your browser's WebGPU cache. This happens only on the first visit. Subsequent loads are near instant.
-                  </p>
-                </div>
-                <div className="w-full max-w-xs space-y-2">
-                  <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-850">
-                    <div 
-                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300 rounded-full"
-                      style={{ width: `${Math.round(engineProgress * 100)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500">
-                    <span className="truncate max-w-[200px] text-zinc-400">{engineStatus}</span>
-                    <span className="text-purple-400 font-bold">{Math.round(engineProgress * 100)}%</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* GPU Unsupported Overlay */}
-            {!webGpuSupported && (
-              <div className="absolute inset-0 bg-zinc-950/95 z-10 flex flex-col items-center justify-center p-6 space-y-4 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-450">
-                  <Brain className="w-6 h-6 animate-pulse" />
-                </div>
-                <div className="space-y-2 max-w-sm">
-                  <h3 className="text-sm font-bold text-rose-400">WebGPU/Hardware Support Error</h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    We could not initialize the local model. WebGPU capability is required to run Gemma-2B. Please use Chrome, Edge, or Safari 18+ on a supported system.
-                  </p>
-                  {engineError && (
-                    <div className="p-2.5 bg-zinc-900/60 border border-zinc-800/60 rounded-xl text-[10px] text-zinc-500 font-mono text-left max-h-[80px] overflow-y-auto mt-2">
-                      Error: {engineError}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleAnalyze} className="space-y-4">
-              <div className="flex justify-between items-center text-xs text-zinc-500 font-medium">
-                <span>Write about your current focus, workload, and mental state:</span>
-                <span className="font-mono">
-                  {charCount} chars | {wordCount} words
-                </span>
-              </div>
-
-              <textarea
-                value={journalText}
-                onChange={(e) => setJournalText(e.target.value)}
-                placeholder="Today I am planning to work on... I feel..."
-                rows={8}
-                disabled={analyzing || engineLoading || !webGpuSupported}
-                className="w-full p-4 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all placeholder:text-zinc-650 resize-none leading-relaxed disabled:opacity-40"
+          {/* Custom Instruction Box if 'custom' selected */}
+          {selectedTemplate === 'custom' && (
+            <div className="bg-sky-950/20 border border-sky-500/30 rounded-2xl p-4 space-y-2 animate-fade-in">
+              <label className="text-xs font-semibold text-sky-300 flex items-center gap-1.5">
+                <Sliders className="w-4 h-4" /> Özel Optimizasyon Kuralınız:
+              </label>
+              <input
+                type="text"
+                value={customInstruction}
+                onChange={(e) => setCustomInstruction(e.target.value)}
+                placeholder="Örn: Sadece JSON formatında çıktı ver, açıklama yapma..."
+                className="w-full p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-sky-500/50"
               />
+            </div>
+          )}
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                  <HelpCircle className="w-4 h-4 text-purple-400" />
-                  <span>Processed 100% locally on your browser.</span>
-                </div>
-
+          {/* Sample Prompts */}
+          <div>
+            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block mb-2">
+              Örnek Prompt'lar:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {SAMPLE_PROMPTS.map((sample, idx) => (
                 <button
-                  type="submit"
-                  disabled={journalText.trim() === '' || analyzing || engineLoading || !webGpuSupported}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 active:scale-[0.98] transition-all rounded-xl font-semibold text-sm text-white flex items-center gap-2 shadow-lg shadow-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSampleClick(sample)}
+                  className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 rounded-xl text-xs text-zinc-400 hover:text-zinc-200 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  {analyzing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Gemma Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Analyze with Gemma</span>
-                      <Send className="w-3.5 h-3.5" />
-                    </>
-                  )}
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span>{sample.title}</span>
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Prompt Input Box */}
+          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex justify-between items-center text-xs text-zinc-400 font-medium">
+              <span>2. Orijinal Prompt'unuzu Girin:</span>
+              <span className="font-mono text-[11px] text-zinc-500">
+                {charCount} karakter | ~{estTokens} token
+              </span>
+            </div>
+
+            <textarea
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder="Optimize etmek istediğiniz ham prompt'u buraya yazın..."
+              rows={8}
+              disabled={optimizing}
+              className="w-full p-4 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all placeholder:text-zinc-600 resize-none leading-relaxed disabled:opacity-40"
+            />
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Brain className="w-4 h-4 text-purple-400" />
+                <span>Ollama + Gemma ile yerel optimize edilir.</span>
               </div>
-            </form>
+
+              <button
+                type="submit"
+                onClick={handleOptimize}
+                disabled={promptText.trim() === '' || optimizing}
+                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 active:scale-[0.98] transition-all rounded-xl font-semibold text-sm text-white flex items-center gap-2 shadow-lg shadow-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {optimizing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Optimize Ediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Prompt'u Optimize Et</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Decision Scoring & Results (5 cols) */}
+        {/* Right Column: Optimized Result & Metrics (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Waiting/Processing State */}
-          {!analysisResult && !analyzing && (
-            <div className="glass-panel rounded-3xl p-8 text-center flex flex-col items-center justify-center min-h-[380px] border-dashed border-zinc-800">
+          {/* Idle State */}
+          {!optimizationResult && !optimizing && (
+            <div className="glass-panel rounded-3xl p-8 text-center flex flex-col items-center justify-center min-h-[420px] border-dashed border-zinc-800">
               <div className="w-16 h-16 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-600 border border-zinc-800 mb-4 animate-pulse-slow">
-                <Brain className="w-8 h-8" />
+                <Sparkles className="w-8 h-8 text-purple-400" />
               </div>
-              <h3 className="text-base font-bold text-zinc-300">Decision Scoring Pending</h3>
+              <h3 className="text-base font-bold text-zinc-300">Optimizasyon Bekleniyor</h3>
               <p className="text-xs text-zinc-500 mt-2 max-w-xs leading-relaxed mx-auto">
-                Write a journal entry on the left and submit it to see real-time cognitive workload and focus scoring metrics.
+                Soldaki alana bir prompt girip şablon seçerek optimizasyonu başlatın. Optimize edilmiş çıktı ve token analizleri burada görünecektir.
               </p>
             </div>
           )}
 
-          {/* Loading state animation during analysis */}
-          {analyzing && (
-            <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center min-h-[380px] space-y-6">
+          {/* Optimizing Loading State */}
+          {optimizing && (
+            <div className="glass-panel rounded-3xl p-8 flex flex-col items-center justify-center min-h-[420px] space-y-6">
               <div className="relative">
                 <div className="w-16 h-16 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Brain className="w-6 h-6 text-purple-400 animate-pulse" />
+                  <Sparkles className="w-6 h-6 text-purple-400 animate-pulse" />
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h3 className="text-sm font-bold text-zinc-300">Inference Running (Local GPU)</h3>
-                <p className="text-xs text-zinc-500 animate-pulse font-mono text-[11px]">Running Gemma-2B-it Model...</p>
-              </div>
-              <div className="w-full bg-zinc-900/60 rounded-xl p-3 border border-zinc-800/80 max-w-xs font-mono text-[10px] text-zinc-400 space-y-1">
-                <div className="flex justify-between">
-                  <span>GPU Shader Pipeline:</span>
-                  <span className="text-purple-400 font-bold">Active</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Precision Model:</span>
-                  <span>q4f16_1</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Context Cache:</span>
-                  <span className="text-emerald-400">Warm</span>
-                </div>
+                <h3 className="text-sm font-bold text-zinc-300">Prompt Mühendisliği Çalışıyor</h3>
+                <p className="text-xs text-zinc-500 animate-pulse font-mono">
+                  {TEMPLATES.find(t => t.id === selectedTemplate)?.name} şablonu uygulanıyor...
+                </p>
               </div>
             </div>
           )}
 
-          {/* Result Panel */}
-          {analysisResult && (
-            <div className="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl relative border-zinc-800 animate-fade-in">
+          {/* Result Output Panel */}
+          {optimizationResult && (
+            <div className="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl relative border-purple-500/30 animate-fade-in">
               <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
                 <div className="flex items-center gap-2">
-                  <Gauge className="w-5 h-5 text-purple-400" />
-                  <h3 className="text-base font-bold text-zinc-200">Local Decision Scores</h3>
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-base font-bold text-zinc-100">Optimize Edilmiş Prompt</h3>
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">
-                  Gemma Output
-                </span>
+
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400">Kopyalandı!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Kopyala</span>
+                    </>
+                  )}
+                </button>
               </div>
 
-              {/* Main Score: Cognitive Load */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider block">Cognitive Load Score</span>
-                  </div>
-                  <span className={`text-2xl font-black font-mono tracking-tight ${analysisResult.cognitiveLoad > 70 ? 'text-rose-400' : analysisResult.cognitiveLoad > 40 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {analysisResult.cognitiveLoad}%
-                  </span>
-                </div>
-                <div className="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-850">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-1000 ${getProgressBarColor(analysisResult.cognitiveLoad)}`}
-                    style={{ width: `${analysisResult.cognitiveLoad}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
-                  <span>0% (Relaxed)</span>
-                  <span>100% (Overloaded)</span>
-                </div>
+              {/* Output Content */}
+              <div className="bg-zinc-950/70 border border-zinc-800 rounded-2xl p-4 text-xs font-mono text-zinc-200 leading-relaxed max-h-[260px] overflow-y-auto whitespace-pre-wrap selection:bg-purple-500/30">
+                {optimizationResult.optimizedPrompt}
               </div>
 
-              {/* Grid Metrics */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Focus Score */}
-                <div className="bg-zinc-900/40 border border-zinc-850 p-3.5 rounded-2xl">
-                  <span className="text-[10px] text-zinc-500 font-semibold block mb-0.5 uppercase tracking-wider">Focus Level</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-lg font-bold font-mono text-zinc-200">{analysisResult.focusLevel}%</span>
-                    <span className="text-[10px] text-zinc-500">efficiency</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-zinc-950 rounded-full mt-2 overflow-hidden">
-                    <div 
-                      className="h-full bg-emerald-500 rounded-full"
-                      style={{ width: `${analysisResult.focusLevel}%` }}
-                    />
+              {/* Token Savings Metric Badge */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-zinc-900/60 border border-zinc-850 p-3 rounded-2xl">
+                  <span className="text-[10px] text-zinc-500 font-semibold uppercase block">Orijinal vs Optimize</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-sm font-mono text-zinc-400 line-through">{optimizationResult.originalTokens} tks</span>
+                    <ArrowRight className="w-3 h-3 text-purple-400 shrink-0" />
+                    <span className="text-base font-bold font-mono text-emerald-400">{optimizationResult.optimizedTokens} tks</span>
                   </div>
                 </div>
 
-                {/* Stress Index */}
-                <div className="bg-zinc-900/40 border border-zinc-850 p-3.5 rounded-2xl">
-                  <span className="text-[10px] text-zinc-500 font-semibold block mb-0.5 uppercase tracking-wider">Stress Index</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-lg font-bold font-mono text-zinc-200">{analysisResult.stressLevel}%</span>
-                    <span className="text-[10px] text-zinc-500">anxiety</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-zinc-950 rounded-full mt-2 overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${analysisResult.stressLevel > 70 ? 'bg-rose-500' : 'bg-amber-500'}`}
-                      style={{ width: `${analysisResult.stressLevel}%` }}
-                    />
+                <div className="bg-zinc-900/60 border border-zinc-850 p-3 rounded-2xl">
+                  <span className="text-[10px] text-zinc-500 font-semibold uppercase block">Token Değişimi</span>
+                  <div className="mt-1">
+                    <span className={`text-base font-black font-mono ${
+                      optimizationResult.tokenSavingsPct > 0 ? 'text-emerald-400' : 'text-purple-400'
+                    }`}>
+                      {optimizationResult.tokenSavingsPct > 0 ? `-%${optimizationResult.tokenSavingsPct} Tasarruf` : `+%${Math.abs(optimizationResult.tokenSavingsPct)} Zenginleştirme`}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Dominant Emotion Tag */}
-              <div className="bg-zinc-900/60 border border-zinc-800 p-4 rounded-2xl flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-500 font-semibold block uppercase tracking-wider">Detected Emotion</span>
-                  <span className="text-sm font-bold text-zinc-100">{analysisResult.dominantEmotion}</span>
-                </div>
-                <div className="px-3 py-1 rounded-xl bg-purple-950/40 border border-purple-800/40 text-purple-300 font-bold text-xs">
-                  AI Tag
-                </div>
-              </div>
-
-              {/* AI Recommendation */}
-              <div className="bg-gradient-to-tr from-purple-900/10 to-indigo-900/10 border border-purple-500/10 p-4 rounded-2xl space-y-1.5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-5">
-                  <Brain className="w-16 h-16 text-purple-400" />
-                </div>
-                <span className="text-[10px] text-purple-400 font-semibold block uppercase tracking-wider">Actionable Insight</span>
-                <p className="text-xs text-zinc-300 leading-relaxed font-medium">
-                  {analysisResult.suggestion}
-                </p>
-              </div>
-
-              {/* Benchmarking performance metadata */}
-              <div className="border-t border-zinc-800/40 pt-4 mt-2">
+              {/* Benchmarking Metadata */}
+              <div className="border-t border-zinc-800/50 pt-4">
                 <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-mono text-zinc-500">
                   <div className="bg-zinc-900/40 py-1.5 rounded-xl border border-zinc-850">
-                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Latency</span>
-                    <span className="text-zinc-400 flex items-center justify-center gap-1 mt-0.5 font-bold">
-                      <Clock className="w-3 h-3 text-purple-400" /> {analysisResult.metrics.inferenceTimeSec}s
+                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Süre</span>
+                    <span className="text-zinc-300 flex items-center justify-center gap-1 mt-0.5 font-bold">
+                      <Clock className="w-3 h-3 text-purple-400" /> {optimizationResult.metrics.inferenceTimeSec}s
                     </span>
                   </div>
                   <div className="bg-zinc-900/40 py-1.5 rounded-xl border border-zinc-850">
-                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Speed</span>
-                    <span className="text-zinc-400 flex items-center justify-center gap-1 mt-0.5 font-bold">
-                      <Zap className="w-3 h-3 text-amber-400" /> {analysisResult.metrics.tokensSec} T/s
+                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Hız</span>
+                    <span className="text-zinc-300 flex items-center justify-center gap-1 mt-0.5 font-bold">
+                      <Zap className="w-3 h-3 text-amber-400" /> {optimizationResult.metrics.tokensSec} T/s
                     </span>
                   </div>
                   <div className="bg-zinc-900/40 py-1.5 rounded-xl border border-zinc-850">
-                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Tokens</span>
-                    <span className="text-zinc-400 flex items-center justify-center gap-1 mt-0.5 font-bold">
-                      <CheckCircle className="w-3 h-3 text-emerald-400" /> {analysisResult.metrics.totalTokens} tks
+                    <span className="block text-[8px] text-zinc-600 uppercase font-semibold">Şablon</span>
+                    <span className="text-purple-400 uppercase font-bold mt-0.5 block truncate px-1">
+                      {optimizationResult.template}
                     </span>
                   </div>
                 </div>
@@ -517,6 +498,48 @@ export default function JournalPage() {
           )}
         </div>
       </div>
+
+      {/* Optimization History Section */}
+      {history.length > 0 && (
+        <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-purple-400" />
+              <h3 className="text-sm font-bold text-zinc-200">Son Optimizasyon Geçmişiniz</h3>
+            </div>
+            <span className="text-[10px] text-zinc-550 font-mono">Toplam {history.length} işlem</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.slice(0, 6).map((item) => (
+              <div 
+                key={item.id} 
+                className="p-4 bg-zinc-900/50 border border-zinc-850 rounded-2xl space-y-2 hover:border-purple-500/30 transition-colors"
+              >
+                <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
+                  <span className="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-300 uppercase font-bold">
+                    {item.template}
+                  </span>
+                  <span>{new Date(item.created_at).toLocaleTimeString()}</span>
+                </div>
+                <p className="text-xs text-zinc-400 font-sans line-clamp-2">
+                  {item.original_prompt}
+                </p>
+                <button
+                  onClick={() => {
+                    setPromptText(item.original_prompt);
+                    setSelectedTemplate(item.template);
+                  }}
+                  className="text-[10px] text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 cursor-pointer pt-1"
+                >
+                  <span>Tekrar Kullan</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

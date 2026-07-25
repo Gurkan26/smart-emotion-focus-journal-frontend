@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { getBackendUrl } from '@/lib/api';
+import { getBackendUrl, getUserStorageKey } from '@/lib/api';
 import { 
   Activity, 
   Cpu, 
@@ -54,7 +54,8 @@ export default function DashboardPage() {
     // Local storage fallback loader
     const loadLocalFallback = () => {
       try {
-        const stored = localStorage.getItem('journal_telemetry_logs');
+        const storageKey = getUserStorageKey('journal_telemetry_logs');
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed.length > 0) {
@@ -63,14 +64,14 @@ export default function DashboardPage() {
             return;
           }
         }
-        setLogs(INITIAL_LOGS);
-        calculateStats(INITIAL_LOGS);
-        setReflections(INITIAL_REFLECTIONS);
+        setLogs([]);
+        calculateStats([]);
+        setReflections([]);
       } catch (err) {
         console.error("Local storage read failed:", err);
-        setLogs(INITIAL_LOGS);
-        calculateStats(INITIAL_LOGS);
-        setReflections(INITIAL_REFLECTIONS);
+        setLogs([]);
+        calculateStats([]);
+        setReflections([]);
       }
     };
 
@@ -172,7 +173,8 @@ export default function DashboardPage() {
         calculateStats(mappedLogs);
         
         // Cache in local storage for instant offline viewing
-        localStorage.setItem('journal_telemetry_logs', JSON.stringify(mappedLogs));
+        const storageKey = getUserStorageKey('journal_telemetry_logs');
+        localStorage.setItem(storageKey, JSON.stringify(mappedLogs));
       } else {
         loadLocalFallback();
       }
@@ -260,6 +262,8 @@ export default function DashboardPage() {
     const token = localStorage.getItem('journal_auth_token');
 
     try {
+      const storageKey = getUserStorageKey('journal_telemetry_logs');
+      localStorage.removeItem(storageKey);
       localStorage.removeItem('journal_telemetry_logs');
       setLogs([]);
       setReflections([]);
