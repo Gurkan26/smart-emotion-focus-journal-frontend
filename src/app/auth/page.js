@@ -121,10 +121,10 @@ export default function AuthPage() {
             <Brain className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-50 to-zinc-300 tracking-wide text-center">
-            Smart Emotion & Focus Journal
+            Prompt Optimizer AI
           </h1>
           <p className="text-zinc-500 text-xs mt-1.5 font-medium tracking-wide">
-            Next-Gen AI Journal & Performance Monitoring
+            Next-Gen AI Prompt Engineering Platform
           </p>
         </div>
 

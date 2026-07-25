@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Smart Emotion & Focus Journal",
-  description: "Akıllı Duygu ve Odak Günlüğü - Local Web MLC-LLM Decision Scoring & LLM Monitoring Dashboard",
+  title: "Prompt Optimizer — AI Prompt Engineering Platform",
+  description: "Akıllı Prompt Optimizasyon Platformu — Ollama, Gemma & Cloudflare AI Entegrasyonu",
 };
 
 export default function RootLayout({ children }) {

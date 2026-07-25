@@ -223,6 +223,12 @@ export default function AppLayout({ children }) {
       href: '/app/dashboard',
       icon: Activity,
       description: 'Raw LLM performance logs'
+    },
+    {
+      name: 'Admin Cockpit',
+      href: '/app/admin',
+      icon: Cpu,
+      description: 'PEFT LoRA, System Prompts & MCP'
     }
   ];
 
@@ -242,9 +248,9 @@ export default function AppLayout({ children }) {
             </div>
             <div>
               <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300 tracking-wide text-base">
-                Smart Journal
+                Prompt Optimizer
               </span>
-              <p className="text-[10px] text-zinc-400 font-medium">Emotion & Focus AI</p>
+              <p className="text-[10px] text-zinc-400 font-medium">AI Engineering Suite</p>
             </div>
           </div>
           <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
@@ -343,7 +349,7 @@ export default function AppLayout({ children }) {
             </div>
             <div>
               <span className="font-bold tracking-wide text-sm bg-clip-text text-transparent bg-gradient-to-r from-zinc-50 to-zinc-300">
-                Smart Journal
+                Prompt Optimizer
               </span>
             </div>
           </div>
