@@ -173,7 +173,8 @@ export default function PromptOptimizerPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Prompt optimizasyon isteği başarısız oldu.");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || errData.error || `Sunucu hatası: HTTP ${res.status}`);
       }
 
       const result = await res.json();
@@ -203,7 +204,11 @@ export default function PromptOptimizerPage() {
       fetchHistory();
     } catch (error) {
       console.error("Prompt optimization failed:", error);
-      alert("Optimizasyon hatası: " + error.message);
+      let msg = error.message;
+      if (msg === "Failed to fetch") {
+        msg = "Sunucuya bağlanılamadı (CORS/Ağ hatası). Lütfen backend servisinin çalıştığından ve internet bağlantınızdan emin olun.";
+      }
+      alert("Optimizasyon hatası: " + msg);
     } finally {
       setOptimizing(false);
     }

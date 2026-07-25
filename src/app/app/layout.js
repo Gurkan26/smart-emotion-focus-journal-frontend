@@ -34,6 +34,8 @@ export default function AppLayout({ children }) {
   const [feedbackStatus, setFeedbackStatus] = useState(null); // null, success, error
   const [actionStatus, setActionStatus] = useState(null);
 
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const fetchVersionAndConfig = async () => {
     const backendUrl = getBackendUrl();
     const token = localStorage.getItem('journal_auth_token');
@@ -71,20 +73,26 @@ export default function AppLayout({ children }) {
   };
 
   useEffect(() => {
-    // Read User Profile info from Storage
+    // Auth Guard: Redirect unauthenticated visitors to /auth immediately
+    const token = localStorage.getItem('journal_auth_token');
     const storedUser = localStorage.getItem('journal_auth_user');
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        if (parsed.email) setUserEmail(parsed.email);
-      } catch (e) {
-        console.error("Failed to parse stored user:", e);
-      }
+
+    if (!token || !storedUser) {
+      router.replace('/auth');
+      return;
     }
 
-    // Load Version info and Config preferences from backend
+    setCheckingAuth(false);
+
+    try {
+      const parsed = JSON.parse(storedUser);
+      if (parsed.email) setUserEmail(parsed.email);
+    } catch (e) {
+      console.error("Failed to parse stored user:", e);
+    }
+
     fetchVersionAndConfig();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -231,6 +239,15 @@ export default function AppLayout({ children }) {
       description: 'PEFT LoRA, System Prompts & MCP'
     }
   ];
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
+        <span className="text-xs font-mono text-zinc-500 animate-pulse">Oturum Doğrulanıyor...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
