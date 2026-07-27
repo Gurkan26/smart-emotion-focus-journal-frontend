@@ -8,7 +8,6 @@ import {
   Zap, 
   Check, 
   RefreshCw, 
-  ShieldCheck, 
   Save,
   Search,
   CheckCircle,
@@ -18,7 +17,10 @@ import {
   Activity,
   Server,
   Cloud,
-  GraduationCap
+  GraduationCap,
+  History,
+  Database,
+  Info
 } from 'lucide-react';
 
 export default function AdminCockpitPage() {
@@ -52,6 +54,7 @@ export default function AdminCockpitPage() {
     vram_gb: 0,
     message: 'No fine-tuning active'
   });
+  const [finetuneHistory, setFinetuneHistory] = useState([]);
   const [startingFinetune, setStartingFinetune] = useState(false);
 
   // MCP Suite state
@@ -63,10 +66,12 @@ export default function AdminCockpitPage() {
   useEffect(() => {
     fetchAdminData();
     fetchFinetuneStatus();
+    fetchFinetuneHistory();
 
-    // Poll fine-tuning status every 3 seconds if active
+    // Poll status and history every 3 seconds if active
     const timer = setInterval(() => {
       fetchFinetuneStatus();
+      fetchFinetuneHistory();
     }, 3000);
 
     return () => clearInterval(timer);
@@ -107,6 +112,20 @@ export default function AdminCockpitPage() {
       if (res.ok) {
         const data = await res.json();
         setFinetuneStatus(data);
+      }
+    } catch (e) {
+      // Quiet background polling
+    }
+  };
+
+  const fetchFinetuneHistory = async () => {
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/finetune/history`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setFinetuneHistory(data);
       }
     } catch (e) {
       // Quiet background polling
@@ -154,6 +173,7 @@ export default function AdminCockpitPage() {
           ...a,
           is_active: a.name === adapterName
         })));
+        fetchAdminData();
       }
     } catch (err) {
       alert("Failed to hot-swap adapter: " + err.message);
@@ -177,6 +197,7 @@ export default function AdminCockpitPage() {
         const data = await res.json();
         if (data.job) setFinetuneStatus(data.job);
         fetchAdminData();
+        fetchFinetuneHistory();
       }
     } catch (err) {
       alert("Failed to start fine-tuning: " + err.message);
@@ -216,26 +237,21 @@ export default function AdminCockpitPage() {
 
   return (
     <div className="space-y-8">
-      {/* Title Header */}
+      {/* Title Header (Without Stage 3 Final Boss badge as requested) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
-              Admin & LLM Control Cockpit
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Stage Out Three: FINAL BOSS
-            </span>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+            Admin & LLM Control Cockpit
+          </h1>
           <p className="text-zinc-400 text-sm mt-1">
-            PEFT (LoRA) model eğitimi, canlı telemetri monitörü, sıcak takas (hot-swap) adaptör yönetimi ve Render/Vercel/MF MCP denetleyicisi.
+            PEFT (LoRA) model eğitimi, veritabanı kayıtları, sıcak takas (hot-swap) adaptör yönetimi ve MCP denetleyicisi.
           </p>
         </div>
       </div>
 
       {/* Grid: 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: PEFT LoRA Fine-Tuning & Adapter Management (7 cols) */}
+        {/* Left Column: PEFT Fine-Tuning & Adapter Management (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* PEFT Live Training & Telemetry Monitor */}
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
@@ -339,6 +355,68 @@ export default function AdminCockpitPage() {
                 )}
               </button>
             </form>
+          </div>
+
+          {/* NEW: Database Training History Records Table */}
+          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-zinc-100">Eğitim Geçmişi & Veritabanı Kayıtları</h3>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1">
+                <History className="w-3 h-3 text-zinc-500" /> PostgreSQL Persisted
+              </span>
+            </div>
+
+            {finetuneHistory.length === 0 ? (
+              <p className="text-xs text-zinc-500 font-mono py-2">Henüz veritabanına kaydedilmiş bir eğitim bulunmuyor.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-zinc-850 text-zinc-500 text-[10px] uppercase">
+                      <th className="pb-2 font-bold">Adaptör</th>
+                      <th className="pb-2 font-bold">Durum</th>
+                      <th className="pb-2 font-bold">Son Loss</th>
+                      <th className="pb-2 font-bold">VRAM</th>
+                      <th className="pb-2 font-bold text-right">Eylem</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-850/50 text-zinc-300">
+                    {finetuneHistory.map((job) => (
+                      <tr key={job.id || job.created_at} className="hover:bg-zinc-900/40">
+                        <td className="py-2.5 font-bold text-zinc-200">{job.adapter_name}</td>
+                        <td className="py-2.5">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            job.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            job.status === 'RUNNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            'bg-zinc-800 text-zinc-400'
+                          }`}>
+                            {job.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-emerald-400 font-bold">{job.loss ? job.loss.toFixed(4) : 'N/A'}</td>
+                        <td className="py-2.5 text-cyan-400">{job.vram_gb || 0} GB</td>
+                        <td className="py-2.5 text-right">
+                          <button
+                            onClick={() => handleActivateAdapter(job.adapter_name)}
+                            disabled={job.adapter_name === llmConfig.active_adapter}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                              job.adapter_name === llmConfig.active_adapter
+                                ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-default'
+                                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm cursor-pointer'
+                            }`}
+                          >
+                            {job.adapter_name === llmConfig.active_adapter ? 'Aktif' : 'Sıcak Takas'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* PEFT Adapter Hot-Swap Panel */}
@@ -483,8 +561,26 @@ export default function AdminCockpitPage() {
           </form>
         </div>
 
-        {/* Right Column: Multi-MCP Suite Inspector (5 cols) */}
+        {/* Right Column: Multi-MCP Suite Inspector & Explanatory Card (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
+          {/* What is MCP Explanatory Card */}
+          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-3 bg-gradient-to-b from-purple-950/20 to-zinc-900/40 border-purple-500/20">
+            <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
+              <Info className="w-4 h-4 text-purple-400" />
+              <span>MCP (Model Context Protocol) Nedir?</span>
+            </div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              **MCP**, yapay zeka modellerinin (LLM) dış sistemlerle (Render, Vercel, Veritabanı ve Bilgi Bankaları) **güvenli, modüler ve standartlaştırılmış** bir formatta konuşmasını sağlayan bir protokoldür.
+            </p>
+            <div className="space-y-1.5 text-[11px] font-mono text-zinc-400 border-t border-purple-800/20 pt-2">
+              <div><strong className="text-purple-300">● Render MCP:</strong> Sunucu bellek, CPU ve canlılık durumunu LLM'e raporlar.</div>
+              <div><strong className="text-purple-300">● Vercel MCP:</strong> Frontend yayın durumunu ve domain sağlık kontrollerini sunar.</div>
+              <div><strong className="text-purple-300">● MF Academy:</strong> Mimari standartlar ve en iyi pratik rehberlerini besler.</div>
+              <div><strong className="text-purple-300">● DeepWiki:</strong> Kodlama ve prompt optimizasyon bilgi bankasını bağlam olarak iletir.</div>
+            </div>
+          </div>
+
+          {/* MCP Inspector Form */}
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
               <div className="flex items-center gap-2">
@@ -532,13 +628,6 @@ export default function AdminCockpitPage() {
                 <BookOpen className="w-3 h-3" /> Wiki
               </button>
             </div>
-
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              {activeMcpTab === 'render' && 'Render Backend deployment ve kaynak kullanım telemetrisini denetleyin.'}
-              {activeMcpTab === 'vercel' && 'Vercel Frontend production build ve domain durumunu sorgulayın.'}
-              {activeMcpTab === 'mf_academy' && 'MasterFabric Academy Stage Out Three uyumluluk kılavuzunu çağırın.'}
-              {activeMcpTab === 'deepwiki' && 'DeepWiki bilgi bankasından prompt ve kod en iyi pratiklerini sorgulayın.'}
-            </p>
 
             <form onSubmit={handleTestMCP} className="space-y-3">
               <div className="relative">
