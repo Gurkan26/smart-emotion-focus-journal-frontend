@@ -12,9 +12,13 @@ import {
   Save,
   Search,
   CheckCircle,
-  Database,
-  SlidersHorizontal,
-  FileCode
+  FileCode,
+  Play,
+  TrendingDown,
+  Activity,
+  Server,
+  Cloud,
+  GraduationCap
 } from 'lucide-react';
 
 export default function AdminCockpitPage() {
@@ -32,13 +36,40 @@ export default function AdminCockpitPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSuccess, setConfigSuccess] = useState(false);
 
-  // DeepWiki MCP state
-  const [mcpQuery, setMcpQuery] = useState('React component state optimization');
+  // PEFT Fine-Tuning Launcher & Telemetry State
+  const [finetuneForm, setFinetuneForm] = useState({
+    adapter_name: 'gemma-journal-custom-lora',
+    epochs: 5,
+    lora_r: 16,
+    learning_rate: 0.0002
+  });
+  const [finetuneStatus, setFinetuneStatus] = useState({
+    status: 'IDLE',
+    current_epoch: 0,
+    total_epochs: 5,
+    progress_pct: 0,
+    loss: 0,
+    vram_gb: 0,
+    message: 'No fine-tuning active'
+  });
+  const [startingFinetune, setStartingFinetune] = useState(false);
+
+  // MCP Suite state
+  const [activeMcpTab, setActiveMcpTab] = useState('render'); // 'render', 'vercel', 'mf_academy', 'deepwiki'
+  const [mcpQuery, setMcpQuery] = useState('System health and deployment status');
   const [mcpResult, setMcpResult] = useState(null);
   const [mcpLoading, setMcpLoading] = useState(false);
 
   useEffect(() => {
     fetchAdminData();
+    fetchFinetuneStatus();
+
+    // Poll fine-tuning status every 3 seconds if active
+    const timer = setInterval(() => {
+      fetchFinetuneStatus();
+    }, 3000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const fetchAdminData = async () => {
@@ -65,6 +96,20 @@ export default function AdminCockpitPage() {
       }
     } catch (e) {
       console.warn("Could not fetch adapters:", e);
+    }
+  };
+
+  const fetchFinetuneStatus = async () => {
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/finetune/status`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setFinetuneStatus(data);
+      }
+    } catch (e) {
+      // Quiet background polling
     }
   };
 
@@ -115,10 +160,33 @@ export default function AdminCockpitPage() {
     }
   };
 
+  const handleStartFinetune = async (e) => {
+    e.preventDefault();
+    setStartingFinetune(true);
+
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/finetune/start`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(finetuneForm)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.job) setFinetuneStatus(data.job);
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert("Failed to start fine-tuning: " + err.message);
+    } finally {
+      setStartingFinetune(false);
+    }
+  };
+
   const handleTestMCP = async (e) => {
     e.preventDefault();
-    if (!mcpQuery.trim()) return;
-
     setMcpLoading(true);
     setMcpResult(null);
 
@@ -126,17 +194,21 @@ export default function AdminCockpitPage() {
     const headers = getAuthHeaders();
 
     try {
-      const res = await fetch(`${backendUrl}/api/admin/mcp/deepwiki`, {
+      const res = await fetch(`${backendUrl}/api/admin/mcp/suite`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ query: mcpQuery })
+        body: JSON.stringify({
+          server: activeMcpTab,
+          action: "inspect",
+          query: mcpQuery
+        })
       });
       if (res.ok) {
         const data = await res.json();
         setMcpResult(data);
       }
     } catch (err) {
-      console.error("MCP Query failed:", err);
+      console.error("MCP Request failed:", err);
     } finally {
       setMcpLoading(false);
     }
@@ -149,37 +221,134 @@ export default function AdminCockpitPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
-              Admin & LLM Modify Cockpit
+              Admin & LLM Control Cockpit
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> Enterprise AI Control Engine
+              <ShieldCheck className="w-3.5 h-3.5" /> Stage Out Three: FINAL BOSS
             </span>
           </div>
           <p className="text-zinc-400 text-sm mt-1">
-            PEFT (LoRA) adaptörlerini sıcak takas (hot-swap) yapın, System Prompt düzenleyin ve DeepWiki MCP protokolünü test edin.
+            PEFT (LoRA) model eğitimi, canlı telemetri monitörü, sıcak takas (hot-swap) adaptör yönetimi ve Render/Vercel/MF MCP denetleyicisi.
           </p>
         </div>
       </div>
 
       {/* Grid: 2 Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: PEFT LoRA Adapter Management & System Prompt (7 cols) */}
+        {/* Left Column: PEFT LoRA Fine-Tuning & Adapter Management (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
+          {/* PEFT Live Training & Telemetry Monitor */}
+          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-bold text-zinc-100">PEFT (LoRA/QLoRA) Canlı Eğitim & Monitör</h3>
+              </div>
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${
+                finetuneStatus.status === 'RUNNING' 
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 animate-pulse'
+                  : finetuneStatus.status === 'COMPLETED'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+              }`}>
+                ● {finetuneStatus.status}
+              </span>
+            </div>
+
+            {/* Live Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 block">Progress</span>
+                <span className="text-lg font-mono font-bold text-indigo-400">{finetuneStatus.progress_pct || 0}%</span>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 block flex items-center gap-1">
+                  <TrendingDown className="w-3 h-3 text-emerald-400" /> Loss
+                </span>
+                <span className="text-lg font-mono font-bold text-emerald-400">{finetuneStatus.loss ? finetuneStatus.loss.toFixed(4) : '0.0000'}</span>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 block">Epoch</span>
+                <span className="text-lg font-mono font-bold text-purple-400">{finetuneStatus.current_epoch || 0} / {finetuneStatus.total_epochs || 5}</span>
+              </div>
+              <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-2xl">
+                <span className="text-[10px] uppercase font-bold text-zinc-500 block">GPU VRAM</span>
+                <span className="text-lg font-mono font-bold text-cyan-400">{finetuneStatus.vram_gb || 0} GB</span>
+              </div>
+            </div>
+
+            {/* Training Progress Bar */}
+            {finetuneStatus.status === 'RUNNING' && (
+              <div className="space-y-1.5">
+                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full transition-all duration-500"
+                    style={{ width: `${finetuneStatus.progress_pct}%` }}
+                  />
+                </div>
+                <p className="text-[10px] font-mono text-zinc-400 leading-relaxed truncate">
+                  {finetuneStatus.message}
+                </p>
+              </div>
+            )}
+
+            {/* Launch Training Form */}
+            <form onSubmit={handleStartFinetune} className="space-y-4 pt-2 border-t border-zinc-800/50">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-1">Adaptör Adı:</label>
+                  <input
+                    type="text"
+                    value={finetuneForm.adapter_name}
+                    onChange={(e) => setFinetuneForm(prev => ({ ...prev, adapter_name: e.target.value }))}
+                    className="w-full p-2.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs text-zinc-200 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-1">LoRA Rank (r):</label>
+                  <input
+                    type="number"
+                    value={finetuneForm.lora_r}
+                    onChange={(e) => setFinetuneForm(prev => ({ ...prev, lora_r: parseInt(e.target.value, 10) }))}
+                    className="w-full p-2.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs text-zinc-200 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-1">Epochs:</label>
+                  <input
+                    type="number"
+                    value={finetuneForm.epochs}
+                    onChange={(e) => setFinetuneForm(prev => ({ ...prev, epochs: parseInt(e.target.value, 10) }))}
+                    className="w-full p-2.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs text-zinc-200 font-mono"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={startingFinetune || finetuneStatus.status === 'RUNNING'}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                {startingFinetune ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5" />
+                    <span>Yerel GPU PEFT Fine-Tuning Başlat</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
           {/* PEFT Adapter Hot-Swap Panel */}
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
               <div className="flex items-center gap-2">
                 <Cpu className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-100">PEFT (LoRA) Adaptör Yönetimi</h3>
+                <h3 className="text-base font-bold text-zinc-100">PEFT (LoRA) Adaptör Sıcak Takas (Hot-Swap)</h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                Hot-Swap Live
-              </span>
             </div>
-
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Modeli yeniden başlatmadan seçilen LoRA ağırlıklarını canlı olarak yükleyin veya değiştirin.
-            </p>
 
             <div className="space-y-3">
               {adapters.map((adapter) => (
@@ -235,7 +404,6 @@ export default function AdminCockpitPage() {
               )}
             </div>
 
-            {/* System Prompt Editor */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
                 Canlı System Prompt (LLM Temel Karakteri):
@@ -243,14 +411,12 @@ export default function AdminCockpitPage() {
               <textarea
                 value={llmConfig.system_prompt}
                 onChange={(e) => setLlmConfig(prev => ({ ...prev, system_prompt: e.target.value }))}
-                rows={4}
+                rows={3}
                 className="w-full p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs text-zinc-200 font-mono leading-relaxed focus:outline-none focus:border-purple-500/50 resize-none"
               />
             </div>
 
-            {/* Hyperparameter Sliders */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-zinc-800/50 pt-4">
-              {/* Temperature Slider */}
               <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-zinc-400 font-semibold">Temperature:</span>
@@ -267,7 +433,6 @@ export default function AdminCockpitPage() {
                 />
               </div>
 
-              {/* Max Tokens Slider */}
               <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-zinc-400 font-semibold">Max Tokens:</span>
@@ -284,7 +449,6 @@ export default function AdminCockpitPage() {
                 />
               </div>
 
-              {/* Top-P Slider */}
               <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-zinc-400 font-semibold">Top-P:</span>
@@ -308,10 +472,7 @@ export default function AdminCockpitPage() {
               className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white text-xs font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
             >
               {savingConfig ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Kaydediliyor...</span>
-                </>
+                <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <>
                   <Save className="w-4 h-4" />
@@ -322,21 +483,61 @@ export default function AdminCockpitPage() {
           </form>
         </div>
 
-        {/* Right Column: DeepWiki MCP Protocol Tester (5 cols) */}
+        {/* Right Column: Multi-MCP Suite Inspector (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-100">DeepWiki MCP Inspector</h3>
+                <h3 className="text-base font-bold text-zinc-100">MCP Multi-Server Inspector</h3>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-300">
-                WebMCP Protocol
-              </span>
+            </div>
+
+            {/* Server Tabs */}
+            <div className="grid grid-cols-4 gap-1.5 p-1 bg-zinc-950/80 rounded-2xl border border-zinc-850">
+              <button
+                type="button"
+                onClick={() => setActiveMcpTab('render')}
+                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
+                  activeMcpTab === 'render' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Server className="w-3 h-3" /> Render
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMcpTab('vercel')}
+                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
+                  activeMcpTab === 'vercel' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Cloud className="w-3 h-3" /> Vercel
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMcpTab('mf_academy')}
+                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
+                  activeMcpTab === 'mf_academy' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <GraduationCap className="w-3 h-3" /> Academy
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMcpTab('deepwiki')}
+                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
+                  activeMcpTab === 'deepwiki' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <BookOpen className="w-3 h-3" /> Wiki
+              </button>
             </div>
 
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Model Context Protocol (MCP) standartlaştırılmış veri akışı ile DeepWiki bilgi bankasını sorgulayın.
+              {activeMcpTab === 'render' && 'Render Backend deployment ve kaynak kullanım telemetrisini denetleyin.'}
+              {activeMcpTab === 'vercel' && 'Vercel Frontend production build ve domain durumunu sorgulayın.'}
+              {activeMcpTab === 'mf_academy' && 'MasterFabric Academy Stage Out Three uyumluluk kılavuzunu çağırın.'}
+              {activeMcpTab === 'deepwiki' && 'DeepWiki bilgi bankasından prompt ve kod en iyi pratiklerini sorgulayın.'}
             </p>
 
             <form onSubmit={handleTestMCP} className="space-y-3">
@@ -345,7 +546,7 @@ export default function AdminCockpitPage() {
                   type="text"
                   value={mcpQuery}
                   onChange={(e) => setMcpQuery(e.target.value)}
-                  placeholder="DeepWiki sorgusu girin..."
+                  placeholder="MCP sorgusu girin..."
                   className="w-full p-3 pl-9 bg-zinc-900/80 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-purple-500/50"
                 />
                 <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
@@ -353,7 +554,7 @@ export default function AdminCockpitPage() {
 
               <button
                 type="submit"
-                disabled={mcpLoading || !mcpQuery.trim()}
+                disabled={mcpLoading}
                 className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-750 text-purple-300 border border-purple-500/30 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
               >
                 {mcpLoading ? (
@@ -361,7 +562,7 @@ export default function AdminCockpitPage() {
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>MCP Sorgusu Gönder</span>
+                    <span>{activeMcpTab.toUpperCase()} MCP Sorgusu Gönder</span>
                   </>
                 )}
               </button>
@@ -372,22 +573,13 @@ export default function AdminCockpitPage() {
               <div className="space-y-3 pt-2 border-t border-zinc-800/50 animate-fade-in">
                 <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
                   <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> MCP Handshake Success
+                    <CheckCircle className="w-3 h-3" /> MCP Handshake Success [{mcpResult.server}]
                   </span>
                   <span>{mcpResult.latencyMs} ms</span>
                 </div>
 
-                <div className="bg-zinc-950/70 border border-zinc-800 p-3 rounded-2xl font-mono text-xs text-zinc-300 leading-relaxed">
-                  {mcpResult.queryResult}
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-semibold text-zinc-500 uppercase block">Kaynaklar (Sources):</span>
-                  {mcpResult.sources?.map((src, i) => (
-                    <div key={i} className="text-[10px] font-mono text-purple-400 bg-purple-950/20 px-2.5 py-1 rounded-lg border border-purple-800/30">
-                      {src}
-                    </div>
-                  ))}
+                <div className="bg-zinc-950/80 border border-zinc-800 p-3 rounded-2xl font-mono text-[11px] text-zinc-300 leading-relaxed overflow-x-auto">
+                  <pre>{JSON.stringify(mcpResult.data || mcpResult, null, 2)}</pre>
                 </div>
               </div>
             )}
