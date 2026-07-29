@@ -162,13 +162,18 @@ export default function PromptOptimizerPage() {
     const fetchHeaders = getAuthHeaders();
 
     try {
+      const effectiveCustomInstruction = selectedTemplate === 'custom' 
+        ? (customInstruction.trim() || 'Özel talimata göre promptu yapılandır ve yanıt ver.')
+        : '';
+
       const res = await fetch(`${backendUrl}/api/prompt/optimize`, {
         method: "POST",
         headers: fetchHeaders,
         body: JSON.stringify({ 
           prompt: promptText,
           template: selectedTemplate,
-          custom_instruction: selectedTemplate === 'custom' ? customInstruction : ''
+          custom_instruction: effectiveCustomInstruction,
+          customInstruction: effectiveCustomInstruction
         })
       });
 
