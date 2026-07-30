@@ -196,19 +196,6 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Quick Admin Login Button */}
-          <div className="px-8 pt-6 pb-2">
-            <button
-              type="button"
-              onClick={handleQuickAdminLogin}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold text-xs transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 border border-emerald-400/30"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>⚡ Admin Girişi (gurkansenturk@admin.com)</span>
-            </button>
-          </div>
-
           {/* Feedback Messages */}
           {error && (
             <div className="mx-8 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-450 rounded-xl text-xs flex items-center gap-2">

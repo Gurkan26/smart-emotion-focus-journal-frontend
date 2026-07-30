@@ -346,7 +346,7 @@ export default function AdminCockpitPage() {
         </button>
       </div>
 
-      {/* Tab 1: User Management */}
+      {/* Sub-tab 1: User Management */}
       {activeAdminTab === 'users' && (
         <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
@@ -395,14 +395,14 @@ export default function AdminCockpitPage() {
                           {isAdminUser ? (
                             <button
                               onClick={() => handleToggleAdminRole(u.id, false)}
-                              className="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-semibold"
+                              className="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-semibold cursor-pointer"
                             >
                               🚫 Adminliğini Kaldır
                             </button>
                           ) : (
                             <button
                               onClick={() => handleToggleAdminRole(u.id, true)}
-                              className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold"
+                              className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold cursor-pointer"
                             >
                               🛡️ Admin Yetkisi Ver
                             </button>
@@ -424,12 +424,154 @@ export default function AdminCockpitPage() {
         </div>
       )}
 
-      {/* Grid for existing tabs */}
-      {(activeAdminTab === 'config' || activeAdminTab === 'adapters' || activeAdminTab === 'telemetry' || activeAdminTab === 'mcp') && (
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: PEFT Fine-Tuning & Adapter Management (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* PEFT Live Training & Telemetry Monitor */}
+      {/* Sub-tab 2: LLM Config */}
+      {activeAdminTab === 'config' && (
+        <form onSubmit={handleSaveConfig} className="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-5 h-5 text-purple-400" />
+              <h3 className="text-base font-bold text-zinc-100">Sistem Promptu & Hyperparameters</h3>
+            </div>
+            {configSuccess && (
+              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                <Check className="w-3.5 h-3.5" /> Kaydedildi!
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
+              Canlı System Prompt (LLM Temel Karakteri):
+            </label>
+            <textarea
+              value={llmConfig.system_prompt}
+              onChange={(e) => setLlmConfig(prev => ({ ...prev, system_prompt: e.target.value }))}
+              rows={4}
+              className="w-full p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs text-zinc-200 font-mono leading-relaxed focus:outline-none focus:border-purple-500/50 resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-zinc-800/50 pt-4">
+            <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Temperature:</span>
+                <span className="font-mono font-bold text-purple-400">{llmConfig.temperature}</span>
+              </div>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.05"
+                value={llmConfig.temperature}
+                onChange={(e) => setLlmConfig(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
+                className="w-full accent-purple-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Max Tokens:</span>
+                <span className="font-mono font-bold text-purple-400">{llmConfig.max_tokens}</span>
+              </div>
+              <input
+                type="range"
+                min="512"
+                max="8192"
+                step="256"
+                value={llmConfig.max_tokens}
+                onChange={(e) => setLlmConfig(prev => ({ ...prev, max_tokens: parseInt(e.target.value, 10) }))}
+                className="w-full accent-purple-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400 font-semibold">Top-P:</span>
+                <span className="font-mono font-bold text-purple-400">{llmConfig.top_p}</span>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                value={llmConfig.top_p}
+                onChange={(e) => setLlmConfig(prev => ({ ...prev, top_p: parseFloat(e.target.value) }))}
+                className="w-full accent-purple-500 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingConfig}
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white text-xs font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+          >
+            {savingConfig ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Konfigürasyonu Canlı Güncelle</span>
+              </>
+            )}
+          </button>
+        </form>
+      )}
+
+      {/* Sub-tab 3: Adapters */}
+      {activeAdminTab === 'adapters' && (
+        <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-purple-400" />
+              <h3 className="text-base font-bold text-zinc-100">PEFT (LoRA) Adaptör Sıcak Takas (Hot-Swap)</h3>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {adapters.map((adapter) => (
+              <div
+                key={adapter.id || adapter.name}
+                className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
+                  adapter.is_active || adapter.name === llmConfig.active_adapter
+                    ? 'bg-purple-600/10 border-purple-500/40 text-zinc-100 shadow-md'
+                    : 'bg-zinc-900/40 border-zinc-850 text-zinc-400 hover:border-zinc-700'
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <FileCode className="w-4 h-4 text-purple-400 shrink-0" />
+                    <span className="text-xs font-bold text-zinc-200 truncate">{adapter.name}</span>
+                    {(adapter.is_active || adapter.name === llmConfig.active_adapter) && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold">
+                        Aktif Adaptör
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-zinc-500 mt-1 line-clamp-1">{adapter.description}</p>
+                  <span className="text-[9px] font-mono text-zinc-600 block mt-0.5">{adapter.file_path}</span>
+                </div>
+
+                <button
+                  onClick={() => handleActivateAdapter(adapter.name)}
+                  disabled={adapter.is_active || adapter.name === llmConfig.active_adapter}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                    adapter.is_active || adapter.name === llmConfig.active_adapter
+                      ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-default'
+                      : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                  }`}
+                >
+                  {adapter.is_active || adapter.name === llmConfig.active_adapter ? 'Yüklü' : 'Yükle & Aktif Et'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sub-tab 4: Fine-Tuning Telemetry */}
+      {activeAdminTab === 'telemetry' && (
+        <div className="space-y-6">
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
               <div className="flex items-center gap-2">
@@ -447,7 +589,6 @@ export default function AdminCockpitPage() {
               </span>
             </div>
 
-            {/* Live Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-zinc-900/60 border border-zinc-800 p-3 rounded-2xl">
                 <span className="text-[10px] uppercase font-bold text-zinc-500 block">Progress</span>
@@ -469,22 +610,6 @@ export default function AdminCockpitPage() {
               </div>
             </div>
 
-            {/* Training Progress Bar */}
-            {finetuneStatus.status === 'RUNNING' && (
-              <div className="space-y-1.5">
-                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full transition-all duration-500"
-                    style={{ width: `${finetuneStatus.progress_pct}%` }}
-                  />
-                </div>
-                <p className="text-[10px] font-mono text-zinc-400 leading-relaxed truncate">
-                  {finetuneStatus.message}
-                </p>
-              </div>
-            )}
-
-            {/* Launch Training Form */}
             <form onSubmit={handleStartFinetune} className="space-y-4 pt-2 border-t border-zinc-800/50">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
@@ -532,277 +657,18 @@ export default function AdminCockpitPage() {
               </button>
             </form>
           </div>
-
-          {/* NEW: Database Training History Records Table */}
-          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-zinc-100">Eğitim Geçmişi & Veritabanı Kayıtları</h3>
-              </div>
-              <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1">
-                <History className="w-3 h-3 text-zinc-500" /> PostgreSQL Persisted
-              </span>
-            </div>
-
-            {finetuneHistory.length === 0 ? (
-              <p className="text-xs text-zinc-500 font-mono py-2">Henüz veritabanına kaydedilmiş bir eğitim bulunmuyor.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-zinc-850 text-zinc-500 text-[10px] uppercase">
-                      <th className="pb-2 font-bold">Adaptör</th>
-                      <th className="pb-2 font-bold">Durum</th>
-                      <th className="pb-2 font-bold">Son Loss</th>
-                      <th className="pb-2 font-bold">VRAM</th>
-                      <th className="pb-2 font-bold text-right">Eylem</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-850/50 text-zinc-300">
-                    {finetuneHistory.map((job) => (
-                      <tr key={job.id || job.created_at} className="hover:bg-zinc-900/40">
-                        <td className="py-2.5 font-bold text-zinc-200">{job.adapter_name}</td>
-                        <td className="py-2.5">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                            job.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                            job.status === 'RUNNING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                            'bg-zinc-800 text-zinc-400'
-                          }`}>
-                            {job.status}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-emerald-400 font-bold">{job.loss ? job.loss.toFixed(4) : 'N/A'}</td>
-                        <td className="py-2.5 text-cyan-400">{job.vram_gb || 0} GB</td>
-                        <td className="py-2.5 text-right">
-                          <button
-                            onClick={() => handleActivateAdapter(job.adapter_name)}
-                            disabled={job.adapter_name === llmConfig.active_adapter}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                              job.adapter_name === llmConfig.active_adapter
-                                ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-default'
-                                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm cursor-pointer'
-                            }`}
-                          >
-                            {job.adapter_name === llmConfig.active_adapter ? 'Aktif' : 'Sıcak Takas'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* PEFT Adapter Hot-Swap Panel */}
-          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
-              <div className="flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-100">PEFT (LoRA) Adaptör Sıcak Takas (Hot-Swap)</h3>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {adapters.map((adapter) => (
-                <div
-                  key={adapter.id || adapter.name}
-                  className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
-                    adapter.is_active || adapter.name === llmConfig.active_adapter
-                      ? 'bg-purple-600/10 border-purple-500/40 text-zinc-100 shadow-md'
-                      : 'bg-zinc-900/40 border-zinc-850 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-purple-400 shrink-0" />
-                      <span className="text-xs font-bold text-zinc-200 truncate">{adapter.name}</span>
-                      {(adapter.is_active || adapter.name === llmConfig.active_adapter) && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold">
-                          Aktif Adaptör
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-zinc-500 mt-1 line-clamp-1">{adapter.description}</p>
-                    <span className="text-[9px] font-mono text-zinc-600 block mt-0.5">{adapter.file_path}</span>
-                  </div>
-
-                  <button
-                    onClick={() => handleActivateAdapter(adapter.name)}
-                    disabled={adapter.is_active || adapter.name === llmConfig.active_adapter}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer ${
-                      adapter.is_active || adapter.name === llmConfig.active_adapter
-                        ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-default'
-                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
-                    }`}
-                  >
-                    {adapter.is_active || adapter.name === llmConfig.active_adapter ? 'Yüklü' : 'Yükle & Aktif Et'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* System Prompt & Parameter Controls Form */}
-          <form onSubmit={handleSaveConfig} className="glass-panel rounded-3xl p-6 shadow-xl space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-100">Sistem Promptu & Hyperparameters</h3>
-              </div>
-              {configSuccess && (
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
-                  <Check className="w-3.5 h-3.5" /> Kaydedildi!
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider block">
-                Canlı System Prompt (LLM Temel Karakteri):
-              </label>
-              <textarea
-                value={llmConfig.system_prompt}
-                onChange={(e) => setLlmConfig(prev => ({ ...prev, system_prompt: e.target.value }))}
-                rows={3}
-                className="w-full p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs text-zinc-200 font-mono leading-relaxed focus:outline-none focus:border-purple-500/50 resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-zinc-800/50 pt-4">
-              <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400 font-semibold">Temperature:</span>
-                  <span className="font-mono font-bold text-purple-400">{llmConfig.temperature}</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.0"
-                  max="1.0"
-                  step="0.05"
-                  value={llmConfig.temperature}
-                  onChange={(e) => setLlmConfig(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
-                  className="w-full accent-purple-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400 font-semibold">Max Tokens:</span>
-                  <span className="font-mono font-bold text-purple-400">{llmConfig.max_tokens}</span>
-                </div>
-                <input
-                  type="range"
-                  min="512"
-                  max="8192"
-                  step="256"
-                  value={llmConfig.max_tokens}
-                  onChange={(e) => setLlmConfig(prev => ({ ...prev, max_tokens: parseInt(e.target.value, 10) }))}
-                  className="w-full accent-purple-500 cursor-pointer"
-                />
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-850 p-3.5 rounded-2xl space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400 font-semibold">Top-P:</span>
-                  <span className="font-mono font-bold text-purple-400">{llmConfig.top_p}</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1.0"
-                  step="0.05"
-                  value={llmConfig.top_p}
-                  onChange={(e) => setLlmConfig(prev => ({ ...prev, top_p: parseFloat(e.target.value) }))}
-                  className="w-full accent-purple-500 cursor-pointer"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={savingConfig}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white text-xs font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
-            >
-              {savingConfig ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Konfigürasyonu Canlı Güncelle</span>
-                </>
-              )}
-            </button>
-          </form>
         </div>
+      )}
 
-        {/* Right Column: Multi-MCP Suite Inspector & Explanatory Card (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* What is MCP Explanatory Card */}
-          <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-3 bg-gradient-to-b from-purple-950/20 to-zinc-900/40 border-purple-500/20">
-            <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
-              <Info className="w-4 h-4 text-purple-400" />
-              <span>MCP (Model Context Protocol) Nedir?</span>
-            </div>
-            <p className="text-xs text-zinc-300 leading-relaxed">
-              **MCP**, yapay zeka modellerinin (LLM) dış sistemlerle (Render, Vercel, Veritabanı ve Bilgi Bankaları) **güvenli, modüler ve standartlaştırılmış** bir formatta konuşmasını sağlayan bir protokoldür.
-            </p>
-            <div className="space-y-1.5 text-[11px] font-mono text-zinc-400 border-t border-purple-800/20 pt-2">
-              <div><strong className="text-purple-300">● Render MCP:</strong> Sunucu bellek, CPU ve canlılık durumunu LLM'e raporlar.</div>
-              <div><strong className="text-purple-300">● Vercel MCP:</strong> Frontend yayın durumunu ve domain sağlık kontrollerini sunar.</div>
-              <div><strong className="text-purple-300">● MF Academy:</strong> Mimari standartlar ve en iyi pratik rehberlerini besler.</div>
-              <div><strong className="text-purple-300">● DeepWiki:</strong> Kodlama ve prompt optimizasyon bilgi bankasını bağlam olarak iletir.</div>
-            </div>
-          </div>
-
-          {/* MCP Inspector Form */}
+      {/* Sub-tab 5: MCP Suite */}
+      {activeAdminTab === 'mcp' && (
+        <div className="space-y-6">
           <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-zinc-100">MCP Multi-Server Inspector</h3>
+                <h3 className="text-base font-bold text-zinc-100">MCP Multi-Server Inspector & DeepWiki</h3>
               </div>
-            </div>
-
-            {/* Server Tabs */}
-            <div className="grid grid-cols-4 gap-1.5 p-1 bg-zinc-950/80 rounded-2xl border border-zinc-850">
-              <button
-                type="button"
-                onClick={() => setActiveMcpTab('render')}
-                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
-                  activeMcpTab === 'render' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Server className="w-3 h-3" /> Render
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMcpTab('vercel')}
-                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
-                  activeMcpTab === 'vercel' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Cloud className="w-3 h-3" /> Vercel
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMcpTab('mf_academy')}
-                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
-                  activeMcpTab === 'mf_academy' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <GraduationCap className="w-3 h-3" /> Academy
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveMcpTab('deepwiki')}
-                className={`py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
-                  activeMcpTab === 'deepwiki' ? 'bg-purple-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <BookOpen className="w-3 h-3" /> Wiki
-              </button>
             </div>
 
             <form onSubmit={handleTestMCP} className="space-y-3">
@@ -827,22 +693,14 @@ export default function AdminCockpitPage() {
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{activeMcpTab.toUpperCase()} MCP Sorgusu Gönder</span>
+                    <span>MCP Sorgusu Gönder</span>
                   </>
                 )}
               </button>
             </form>
 
-            {/* MCP Result View */}
             {mcpResult && (
-              <div className="space-y-3 pt-2 border-t border-zinc-800/50 animate-fade-in">
-                <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> MCP Handshake Success [{mcpResult.server}]
-                  </span>
-                  <span>{mcpResult.latencyMs} ms</span>
-                </div>
-
+              <div className="space-y-3 pt-2 border-t border-zinc-800/50">
                 <div className="bg-zinc-950/80 border border-zinc-800 p-3 rounded-2xl font-mono text-[11px] text-zinc-300 leading-relaxed overflow-x-auto">
                   <pre>{JSON.stringify(mcpResult.data || mcpResult, null, 2)}</pre>
                 </div>
@@ -850,7 +708,6 @@ export default function AdminCockpitPage() {
             )}
           </div>
         </div>
-      </div>
       )}
     </div>
   );

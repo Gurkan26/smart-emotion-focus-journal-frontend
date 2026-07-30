@@ -228,26 +228,53 @@ export default function AppLayout({ children }) {
     router.push('/auth');
   };
 
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('journal_theme') || 'light';
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (theme === 'dark') {
+        root.classList.add('dark');
+        root.classList.remove('light');
+      } else {
+        root.classList.add('light');
+        root.classList.remove('dark');
+      }
+      localStorage.setItem('journal_theme', theme);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   const allNavItems = [
     {
       name: 'Prompt Optimizer',
       href: '/app/journal',
       icon: Sparkles,
-      description: 'Prompt atma ekranı ve yanıt ekranı',
+      description: 'Prompt atma ve yanıt ekranı',
       adminOnly: false
     },
     {
       name: 'Metrics',
       href: '/app/dashboard',
       icon: Activity,
-      description: 'Sistem gecikmesi ve metrik kayıtları',
+      description: 'Metrik ve sistem performansı',
       adminOnly: true
     },
     {
       name: 'Admin Control Panel',
       href: '/app/admin',
       icon: Cpu,
-      description: 'Kullanıcı yönetimi, PEFT LoRA & MCP',
+      description: 'Kullanıcı yönetimi, PEFT & MCP',
       adminOnly: true
     }
   ];
@@ -256,55 +283,32 @@ export default function AppLayout({ children }) {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
-        <span className="text-xs font-mono text-zinc-500 animate-pulse">Oturum Doğrulanıyor...</span>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-full border-4 border-sky-500/20 border-t-sky-500 animate-spin"></div>
+        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 animate-pulse">Oturum Doğrulanıyor...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-slow"></div>
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-emerald-950/10 rounded-full blur-[100px] pointer-events-none -z-10"></div>
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-80 glass-panel border-r border-zinc-800/80 shrink-0">
-        {/* Header/Branding */}
-        <div className="p-6 border-b border-zinc-800/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-900/20">
-              <Brain className="w-6 h-6 text-white animate-float" />
-            </div>
-            <div>
-              <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300 tracking-wide text-base">
-                Prompt Optimizer
-              </span>
-              <p className="text-[10px] text-zinc-400 font-medium">AI Engineering Suite</p>
-            </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col">
+      {/* Top Header & Tabbed Navigation Bar */}
+      <header className="sticky top-0 z-50 glass-panel border-b border-sky-500/20 px-6 py-3 flex items-center justify-between shadow-sm">
+        {/* Brand Logo */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center shadow-md text-white font-bold">
+            <Brain className="w-5 h-5" />
           </div>
-          <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-        </div>
-
-        {/* Local LLM Status Badge */}
-        <div className="px-6 py-4 border-b border-zinc-800/30">
-          <div className="bg-zinc-900/60 rounded-xl p-3 border border-zinc-800 flex items-center gap-3">
-            <div className="relative flex h-3.5 w-3.5 items-center justify-center">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-zinc-200">Gemma-2B (Local)</p>
-              <p className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
-                <Cpu className="w-3 h-3 text-purple-400" /> Web MLC-LLM Ready
-              </p>
-            </div>
+          <div>
+            <span className="font-bold tracking-tight text-base text-slate-900 dark:text-white">
+              Smart Emotion & Focus Journal
+            </span>
+            <span className="text-[11px] text-sky-600 dark:text-sky-400 ml-2 font-medium">AI Hub</span>
           </div>
         </div>
 
-        {/* Navigation links */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {/* Center Tabbed Navigation Bar */}
+        <nav className="flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-sky-500/20">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -312,155 +316,67 @@ export default function AppLayout({ children }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-start gap-4 p-3.5 rounded-xl transition-all duration-300 group ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
                   isActive
-                    ? 'bg-purple-600/10 border border-purple-500/20 text-purple-300 shadow-inner'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40 border border-transparent'
+                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/50 dark:hover:bg-slate-700/50'
                 }`}
               >
-                <div className={`p-1.5 rounded-lg transition-colors ${
-                  isActive ? 'bg-purple-500/20 text-purple-300' : 'bg-zinc-900/60 text-zinc-500 group-hover:text-zinc-300'
-                }`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.name}</p>
-                  <p className="text-[11px] text-zinc-500 font-medium group-hover:text-zinc-400 mt-0.5">{item.description}</p>
-                </div>
+                <Icon className="w-4 h-4" />
+                <span>{item.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Sidebar Footer API version & stats */}
-        <div className="px-6 py-2 text-center border-t border-zinc-800/10">
-          <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-widest">
-            Backend API Version: {apiVersion}
-          </span>
+        {/* Right User Controls & Theme Toggle */}
+        <div className="flex items-center gap-3">
+          {/* User Info Badge */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-200/80 dark:bg-slate-800/80 border border-sky-500/20 text-xs">
+            <User className="w-3.5 h-3.5 text-sky-500" />
+            <span className="font-medium text-slate-700 dark:text-slate-200 text-[11px]">{userEmail}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+              isAdmin
+                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                : 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+            }`}>
+              {isAdmin ? 'ADMIN' : 'USER'}
+            </span>
+          </div>
+
+          {/* Light / Dark Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 border border-sky-500/20 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all text-xs flex items-center gap-1 font-semibold"
+            title={theme === 'light' ? 'Koyu Temaya Geç (Dark Mode)' : 'Açık Temaya Geç (Light Mode)'}
+          >
+            {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+          </button>
+
+          {/* Settings button */}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 border border-sky-500/20 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all"
+            title="Ayarlar & Geri Bildirim"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {/* Logout button */}
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 transition-all"
+            title="Çıkış Yap"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
+      </header>
 
-        {/* Footer / User Profile */}
-        <div className="p-4 border-t border-zinc-800/50 bg-zinc-900/20">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/40 border border-zinc-850">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0">
-                <User className="w-5 h-5 text-zinc-300" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-zinc-200 truncate">Academy Account</p>
-                <p className="text-[10px] text-zinc-500 truncate">{userEmail}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-purple-400 hover:bg-purple-500/10 transition-colors cursor-pointer"
-                title="Settings & Feedback"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-450 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Mobile Header / Navigation */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="md:hidden flex items-center justify-between p-4 glass-panel border-b border-zinc-800/80 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-900/20">
-              <Brain className="w-5 h-5 text-white animate-float" />
-            </div>
-            <div>
-              <span className="font-bold tracking-wide text-sm bg-clip-text text-transparent bg-gradient-to-r from-zinc-50 to-zinc-300">
-                Prompt Optimizer
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Settings button on mobile header */}
-            <button 
-              onClick={() => setShowSettings(true)}
-              className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </header>
-
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-[65px] z-40 glass-panel border-t border-zinc-800 flex flex-col justify-between">
-            <nav className="p-4 space-y-2">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 ${
-                      isActive
-                        ? 'bg-purple-600/10 border border-purple-500/20 text-purple-300'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 text-purple-400" />
-                    <div>
-                      <p className="text-sm font-semibold">{item.name}</p>
-                      <p className="text-[11px] text-zinc-500 font-medium">{item.description}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="p-6 border-t border-zinc-800 bg-zinc-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-zinc-850 flex items-center justify-center border border-zinc-700">
-                    <User className="w-5 h-5 text-zinc-300" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-zinc-200">Academy User</p>
-                    <p className="text-[10px] text-zinc-500 truncate max-w-[120px]">{userEmail}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-450 hover:bg-rose-500/20 text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto bg-grid-pattern p-6 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Main Page Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
+        {children}
+      </main>
 
       {/* Dynamic Popover/Modal Settings Panel */}
       {showSettings && (
