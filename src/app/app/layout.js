@@ -301,7 +301,7 @@ export default function AppLayout({ children }) {
           </div>
           <div>
             <span className="font-bold tracking-tight text-base text-slate-900 dark:text-white">
-              Smart Emotion & Focus Journal
+              AI Prompt Optimizer
             </span>
             <span className="text-[11px] text-sky-600 dark:text-sky-400 ml-2 font-medium">AI Hub</span>
           </div>

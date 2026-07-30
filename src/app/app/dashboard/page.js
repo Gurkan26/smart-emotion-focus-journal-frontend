@@ -354,13 +354,13 @@ export default function DashboardPage() {
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Metrics & System Monitoring Dashboard
           </h1>
-          <p className="text-zinc-400 text-sm mt-1 flex items-center gap-2">
-            <span>Real-time telemetry of local inference and cache hits.</span>
-            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-bold">
-              Avg Load: {avgCognitiveLoad}%
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 flex items-center gap-2">
+            <span>Canlı performans metrikleri ve sistem durumu.</span>
+            <span className="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-[10px] font-bold">
+              Ortalama Yük: {avgCognitiveLoad}%
             </span>
           </p>
         </div>

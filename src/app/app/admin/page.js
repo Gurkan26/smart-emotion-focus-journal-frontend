@@ -280,66 +280,66 @@ export default function AdminCockpitPage() {
 
   return (
     <div className="space-y-8">
-      {/* Title Header (Without Stage 3 Final Boss badge as requested) */}
+      {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Admin & LLM Control Cockpit
           </h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            PEFT (LoRA) model eğitimi, veritabanı kayıtları, sıcak takas (hot-swap) adaptör yönetimi ve MCP denetleyicisi.
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+            Kullanıcı yönetimi, PEFT (LoRA) modelleri, sıcak takas (hot-swap) adaptör yönetimi ve MCP denetleyicisi.
           </p>
         </div>
       </div>
 
       {/* Sub-tab Navigation Bar */}
-      <div className="flex border-b border-zinc-800 gap-2 overflow-x-auto pb-2">
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setActiveAdminTab('users')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all ${
             activeAdminTab === 'users'
-              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           }`}
         >
           👥 Kullanıcı Yönetimi
         </button>
         <button
           onClick={() => setActiveAdminTab('config')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all ${
             activeAdminTab === 'config'
-              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           }`}
         >
           ⚙️ LLM Ayarları
         </button>
         <button
           onClick={() => setActiveAdminTab('adapters')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all ${
             activeAdminTab === 'adapters'
-              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           }`}
         >
           🧩 PEFT Adaptörleri
         </button>
         <button
           onClick={() => setActiveAdminTab('telemetry')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all ${
             activeAdminTab === 'telemetry'
-              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           }`}
         >
           📈 Model Eğitimi (Fine-Tuning)
         </button>
         <button
           onClick={() => setActiveAdminTab('mcp')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all ${
             activeAdminTab === 'mcp'
-              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
           }`}
         >
           🌐 MCP Suite

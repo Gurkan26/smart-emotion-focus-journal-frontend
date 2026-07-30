@@ -232,14 +232,14 @@ export default function PromptOptimizerPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               AI Prompt Optimizer
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Gemma Engine
+            <span className="px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-xs font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-sky-500" /> Gemma Engine
             </span>
           </div>
-          <p className="text-zinc-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
             Ham prompt'larınızı yapay zeka modelleri için en doğru, tasarruflu veya yaratıcı formata dönüştürün.
           </p>
         </div>

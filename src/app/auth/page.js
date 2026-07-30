@@ -145,32 +145,32 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors">
       {/* Decorative Glow Orbs */}
-      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-purple-900/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse-slow"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-[350px] h-[350px] bg-indigo-900/10 rounded-full blur-[90px] pointer-events-none -z-10"></div>
+      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-sky-500/10 dark:bg-sky-500/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse-slow"></div>
+      <div className="absolute bottom-1/4 right-1/3 w-[350px] h-[350px] bg-teal-500/10 dark:bg-teal-500/20 rounded-full blur-[90px] pointer-events-none -z-10"></div>
 
       <div className="w-full max-w-md z-10">
         {/* Branding header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-xl shadow-purple-900/30 mb-4 border border-purple-500/30 animate-float">
-            <Brain className="w-8 h-8 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center shadow-xl shadow-sky-500/20 mb-4 border border-sky-400/30 animate-float text-white">
+            <Brain className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-50 to-zinc-300 tracking-wide text-center">
-            Prompt Optimizer AI
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide text-center">
+            AI Prompt Optimizer
           </h1>
-          <p className="text-zinc-500 text-xs mt-1.5 font-medium tracking-wide">
-            Next-Gen AI Prompt Engineering Platform
+          <p className="text-slate-600 dark:text-slate-400 text-xs mt-1.5 font-medium tracking-wide">
+            AI Engineering & Prompt Optimization Platform
           </p>
         </div>
 
-        {/* Auth Glass Card */}
-        <div className="glass-panel glass-panel-glow-purple rounded-3xl overflow-hidden shadow-2xl relative">
+        {/* Auth Card */}
+        <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl relative border border-sky-500/20 bg-white dark:bg-slate-900">
           {/* Card Border Highlight */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 pointer-events-none rounded-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-500/5 to-teal-500/5 pointer-events-none rounded-3xl" />
           
           {/* Tabs */}
-          <div className="flex border-b border-zinc-800/80 bg-zinc-900/40">
+          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/40">
             <button
               onClick={() => {
                 setIsLogin(true);
@@ -179,11 +179,11 @@ export default function AuthPage() {
               }}
               className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
                 isLogin 
-                  ? 'text-purple-400 border-purple-500 bg-purple-500/5' 
-                  : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                  ? 'text-sky-600 dark:text-sky-400 border-sky-500 bg-sky-500/10' 
+                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Sign In
+              Giriş Yap (Sign In)
             </button>
             <button
               onClick={() => {
@@ -193,24 +193,24 @@ export default function AuthPage() {
               }}
               className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
                 !isLogin 
-                  ? 'text-purple-400 border-purple-500 bg-purple-500/5' 
-                  : 'text-zinc-500 border-transparent hover:text-zinc-300'
+                  ? 'text-sky-600 dark:text-sky-400 border-sky-500 bg-sky-500/10' 
+                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Register
+              Kayıt Ol (Register)
             </button>
           </div>
 
           {/* Feedback Messages */}
           {error && (
-            <div className="mx-8 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-450 rounded-xl text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="mx-8 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2 font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
           {successMessage && (
-            <div className="mx-8 mt-6 p-3.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-450 rounded-xl text-xs flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+            <div className="mx-8 mt-6 p-3.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 font-medium">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -219,9 +219,9 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="p-8 space-y-5">
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-zinc-400">Full Name</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Ad Soyad (Full Name)</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -230,17 +230,17 @@ export default function AuthPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    placeholder="Enter your name"
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
+                    placeholder="Adınızı girin"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-400">Email Address</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">E-Posta Adresi (Email)</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -249,23 +249,18 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder="name@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
+                  placeholder="eposta@ornek.com"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-semibold text-zinc-400">Password</label>
-                {isLogin && (
-                  <a href="#" className="text-[10px] font-semibold text-purple-400 hover:text-purple-300">
-                    Forgot password?
-                  </a>
-                )}
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Şifre (Password)</label>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -275,7 +270,7 @@ export default function AuthPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl text-zinc-200 text-sm focus:outline-none focus:border-purple-500/60 transition-colors placeholder:text-zinc-650"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -288,13 +283,13 @@ export default function AuthPage() {
                 name="agree"
                 checked={formData.agree}
                 onChange={handleInputChange}
-                className="w-4 h-4 accent-purple-500 rounded border-zinc-800 bg-zinc-900 text-purple-600 focus:ring-purple-500/50"
+                className="w-4 h-4 accent-sky-500 rounded border-slate-300 bg-slate-100 text-sky-600 focus:ring-sky-500"
               />
-              <label htmlFor="agree" className="text-xs text-zinc-400 select-none leading-none cursor-pointer">
+              <label htmlFor="agree" className="text-xs text-slate-600 dark:text-slate-400 select-none leading-none cursor-pointer">
                 {isLogin ? (
-                  <span>Remember this device</span>
+                  <span>Beni Hatırla</span>
                 ) : (
-                  <span>I agree to the <a href="#" className="text-purple-400 hover:underline">Terms of Service</a></span>
+                  <span>Kullanım Koşullarını Kabul Ediyorum</span>
                 )}
               </label>
             </div>
@@ -303,25 +298,25 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 active:scale-[0.98] transition-all rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 disabled:opacity-70 disabled:cursor-not-allowed group cursor-pointer"
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 active:scale-[0.98] transition-all rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span>{isLogin ? 'Sign In to Journal' : 'Create Account'}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  <span>{isLogin ? 'Sisteme Giriş Yap' : 'Hesap Oluştur'}</span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
         </div>
 
-        {/* Demo Credentials hint */}
-        <div className="mt-6 p-4 bg-zinc-900/40 rounded-2xl border border-zinc-800/50 text-center">
-          <p className="text-zinc-400 text-xs flex items-center justify-center gap-1.5 font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Interactive APIs active: Registrations are saved in GORM/Memory.</span>
+        {/* Footer Hint */}
+        <div className="mt-6 p-4 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl border border-slate-300 dark:border-slate-800 text-center">
+          <p className="text-slate-600 dark:text-slate-400 text-xs flex items-center justify-center gap-1.5 font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+            <span>Kullanıcı kayıtları aktif veritabanına ve belleğe kaydedilir.</span>
           </p>
         </div>
       </div>
