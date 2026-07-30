@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle, Shield, Key } from 'lucide-react';
 import { getBackendUrl, clearAllUserStorage, getUserId } from '@/lib/api';
 
 export default function AuthPage() {
@@ -169,94 +169,100 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors duration-300">
       {/* Top Right Theme Toggle Button */}
       <div className="absolute top-4 right-4 z-20">
         <button
           type="button"
           onClick={toggleTheme}
-          className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm hover:scale-105 transition-all flex items-center gap-1.5 cursor-pointer"
+          className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
         >
           {theme === 'light' ? '☀️ Light' : '🌙 Dark'}
         </button>
       </div>
 
       {/* Decorative Glow Orbs */}
-      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-sky-500/10 dark:bg-sky-500/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse-slow"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-[350px] h-[350px] bg-teal-500/10 dark:bg-teal-500/20 rounded-full blur-[90px] pointer-events-none -z-10"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-500/10 dark:bg-violet-600/15 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-sky-500/10 dark:bg-sky-500/15 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-[30%] right-[10%] w-[300px] h-[300px] bg-indigo-500/5 dark:bg-indigo-600/10 rounded-full blur-[90px] pointer-events-none -z-10 animate-float"></div>
 
       <div className="w-full max-w-md z-10">
         {/* Branding header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center shadow-xl shadow-sky-500/20 mb-4 border border-sky-400/30 animate-float text-white">
-            <Brain className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-sky-500 flex items-center justify-center shadow-2xl shadow-indigo-500/20 mb-4 border border-indigo-400/20 animate-float text-white relative group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-violet-600 to-sky-500 rounded-2xl blur-md opacity-50 group-hover:opacity-80 transition-opacity" />
+            <Brain className="w-9 h-9 z-10" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide text-center">
+          <h1 className="text-3xl font-extrabold tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-500 dark:from-violet-400 dark:via-indigo-300 dark:to-sky-400">
             AI Prompt Optimizer
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-xs mt-1.5 font-medium tracking-wide">
-            AI Engineering & Prompt Optimization Platform
+          <p className="text-slate-500 dark:text-slate-450 text-[10px] mt-2 font-bold tracking-widest uppercase">
+            Prompt Engineering & Optimization
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="glass-panel rounded-3xl overflow-hidden shadow-2xl relative border border-sky-500/20 bg-white dark:bg-slate-900">
-          {/* Card Border Highlight */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-500/5 to-teal-500/5 pointer-events-none rounded-3xl" />
+        <div className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xl relative overflow-hidden transition-all duration-300">
+          {/* Card Border Highlight Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-sky-500/5 pointer-events-none rounded-3xl" />
           
-          {/* Tabs */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/40">
-            <button
-              onClick={() => {
-                setIsLogin(true);
-                setError(null);
-                setSuccessMessage(null);
-              }}
-              className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
-                isLogin 
-                  ? 'text-sky-600 dark:text-sky-400 border-sky-500 bg-sky-500/10' 
-                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Giriş Yap (Sign In)
-            </button>
-            <button
-              onClick={() => {
-                setIsLogin(false);
-                setError(null);
-                setSuccessMessage(null);
-              }}
-              className={`flex-1 py-4 text-sm font-semibold tracking-wide transition-all border-b-2 ${
-                !isLogin 
-                  ? 'text-sky-600 dark:text-sky-400 border-sky-500 bg-sky-500/10' 
-                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Kayıt Ol (Register)
-            </button>
+          {/* Sliding Pill Tabs */}
+          <div className="p-2 bg-slate-100/50 dark:bg-slate-950/40 border-b border-slate-200/50 dark:border-slate-800/50">
+            <div className="grid grid-cols-2 gap-1 bg-slate-200/50 dark:bg-slate-950/60 p-1 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(true);
+                  setError(null);
+                  setSuccessMessage(null);
+                }}
+                className={`py-2 px-4 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
+                  isLogin 
+                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-250/20 dark:border-slate-700/50' 
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                Giriş Yap
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(false);
+                  setError(null);
+                  setSuccessMessage(null);
+                }}
+                className={`py-2 px-4 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
+                  !isLogin 
+                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-250/20 dark:border-slate-700/50' 
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                Kayıt Ol
+              </button>
+            </div>
           </div>
 
           {/* Feedback Messages */}
           {error && (
-            <div className="mx-8 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2 font-medium">
+            <div className="mx-6 mt-6 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-450 rounded-xl text-xs flex items-center gap-2 font-medium animate-pulse-slow">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
           {successMessage && (
-            <div className="mx-8 mt-6 p-3.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 font-medium">
+            <div className="mx-6 mt-6 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-450 rounded-xl text-xs flex items-center gap-2 font-medium">
               <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-5">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Ad Soyad (Full Name)</label>
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wider">Ad Soyad</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -266,16 +272,16 @@ export default function AuthPage() {
                     onChange={handleInputChange}
                     required={!isLogin}
                     placeholder="Adınızı girin"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-205 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">E-Posta Adresi (Email)</label>
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wider">E-Posta Adresi</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -285,17 +291,17 @@ export default function AuthPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="eposta@ornek.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-205 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Şifre (Password)</label>
+                <label className="text-[10px] font-bold text-slate-500 dark:text-slate-405 uppercase tracking-wider">Şifre</label>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-sky-500">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -305,12 +311,12 @@ export default function AuthPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-205 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
 
-            {/* Checkbox */}
+            {/* Checkbox and Custom Switch styling */}
             <div className="flex items-center gap-2 pt-1">
               <input
                 id="agree"
@@ -318,9 +324,9 @@ export default function AuthPage() {
                 name="agree"
                 checked={formData.agree}
                 onChange={handleInputChange}
-                className="w-4 h-4 accent-sky-500 rounded border-slate-300 bg-slate-100 text-sky-600 focus:ring-sky-500"
+                className="w-4 h-4 accent-indigo-550 rounded border-slate-350 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
               />
-              <label htmlFor="agree" className="text-xs text-slate-600 dark:text-slate-400 select-none leading-none cursor-pointer">
+              <label htmlFor="agree" className="text-xs text-slate-550 dark:text-slate-400 select-none leading-none cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                 {isLogin ? (
                   <span>Beni Hatırla</span>
                 ) : (
@@ -333,7 +339,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 active:scale-[0.98] transition-all rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-500 hover:from-violet-500 hover:via-indigo-550 hover:to-sky-450 active:scale-[0.98] transition-all rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -344,14 +350,29 @@ export default function AuthPage() {
                 </>
               )}
             </button>
+
+            {/* Admin Demo Helper */}
+            {isLogin && (
+              <div className="pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
+                <button
+                  type="button"
+                  onClick={handleQuickAdminLogin}
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 bg-slate-100/60 dark:bg-slate-950/40 hover:bg-slate-200/80 dark:hover:bg-slate-950 border border-slate-200 dark:border-slate-800/80 text-slate-650 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer group"
+                >
+                  <Shield className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span>Hızlı Admin Demo Girişi</span>
+                </button>
+              </div>
+            )}
           </form>
         </div>
 
         {/* Footer Hint */}
-        <div className="mt-6 p-4 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl border border-slate-300 dark:border-slate-800 text-center">
-          <p className="text-slate-600 dark:text-slate-400 text-xs flex items-center justify-center gap-1.5 font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-            <span>Kullanıcı kayıtları aktif veritabanına ve belleğe kaydedilir.</span>
+        <div className="mt-6 p-4 bg-slate-100/60 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-850/80 text-center">
+          <p className="text-slate-550 dark:text-slate-400 text-xs flex items-center justify-center gap-1.5 font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-450" />
+            <span>Kullanıcı kayıtları veritabanına ve belleğe kaydedilir.</span>
           </p>
         </div>
       </div>

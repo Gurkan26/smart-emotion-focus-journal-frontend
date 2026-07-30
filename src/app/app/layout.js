@@ -62,10 +62,12 @@ export default function AppLayout({ children }) {
         });
         if (res.ok) {
           const data = await res.json();
+          const loadedTheme = data.theme || 'dark';
           setConfigSettings({
-            theme: data.theme || 'dark',
+            theme: loadedTheme,
             notifications: data.notifications !== false
           });
+          setTheme(loadedTheme);
         }
       } catch (err) {
         console.warn("Could not fetch user config preferences:", err);
@@ -103,19 +105,11 @@ export default function AppLayout({ children }) {
     fetchVersionAndConfig();
   }, [router, pathname]);
 
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const root = document.documentElement;
-      if (configSettings.theme === 'light') {
-        root.classList.add('light');
-      } else {
-        root.classList.remove('light');
-      }
-    }
-  }, [configSettings.theme]);
-
   const handleUpdateConfig = async (updated) => {
     setConfigSettings(updated);
+    if (updated.theme) {
+      setTheme(updated.theme);
+    }
     const backendUrl = getBackendUrl();
     const token = localStorage.getItem('journal_auth_token');
     
@@ -252,7 +246,9 @@ export default function AppLayout({ children }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    handleUpdateConfig({ ...configSettings, theme: nextTheme });
   };
 
   const allNavItems = [
