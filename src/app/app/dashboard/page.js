@@ -386,7 +386,7 @@ export default function DashboardPage() {
 
           <button 
             onClick={handleClearLogs}
-            className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-900 dark:hover:bg-zinc-850 border border-slate-250 dark:border-zinc-800 text-slate-650 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
           >
             Clear History
           </button>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
           <button 
             onClick={handleRefreshLogs}
             disabled={refreshing}
-            className="px-4 py-2 bg-purple-600/10 hover:bg-purple-600/25 border border-purple-500/20 text-purple-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-purple-500/10 dark:bg-purple-600/10 hover:bg-purple-500/20 dark:hover:bg-purple-600/25 border border-purple-500/20 text-purple-600 dark:text-purple-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh Telemetry</span>
@@ -405,97 +405,96 @@ export default function DashboardPage() {
       {/* Stats Cards GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Token Count */}
-        <div className="glass-panel rounded-2xl p-5 border-zinc-850 hover:border-zinc-800 transition-colors">
+        <div className="glass-panel rounded-2xl p-5 border-slate-200 dark:border-zinc-850 hover:border-slate-350 dark:hover:border-zinc-800 transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Tokens Processed</span>
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+            <span className="text-xs text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Tokens Processed</span>
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
               <Database className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
+            <h3 className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-zinc-100">
               {stats.tokensProcessed.toLocaleString()}
             </h3>
-            <p className="text-[10px] text-zinc-550 font-semibold mt-1">
+            <p className="text-[10px] text-slate-400 dark:text-zinc-555 font-semibold mt-1">
               Accumulated model runs
             </p>
           </div>
         </div>
 
         {/* Latency */}
-        <div className="glass-panel rounded-2xl p-5 border-zinc-850 hover:border-zinc-800 transition-colors">
+        <div className="glass-panel rounded-2xl p-5 border-slate-200 dark:border-zinc-850 hover:border-slate-350 dark:hover:border-zinc-800 transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Avg Latency</span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+            <span className="text-xs text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Avg Latency</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
+            <h3 className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-zinc-100">
               {stats.avgLatencyMs > 1000 ? `${(stats.avgLatencyMs / 1000).toFixed(2)}s` : `${stats.avgLatencyMs}ms`}
             </h3>
-            <p className="text-[10px] text-zinc-500 font-semibold flex items-center gap-1 mt-1">
-              <Zap className="w-3.5 h-3.5 text-purple-400" /> WebGPU local threads
+            <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-semibold flex items-center gap-1 mt-1">
+              <Zap className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" /> WebGPU local threads
             </p>
           </div>
         </div>
 
         {/* Cache Hit Ratio */}
-        <div className="glass-panel rounded-2xl p-5 border-zinc-850 hover:border-zinc-800 transition-colors">
+        <div className="glass-panel rounded-2xl p-5 border-slate-200 dark:border-zinc-850 hover:border-slate-350 dark:hover:border-zinc-800 transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Weight Cache Hit</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+            <span className="text-xs text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Weight Cache Hit</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
+            <h3 className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-zinc-100">
               {stats.cacheHitRatio}%
             </h3>
-            <p className="text-[10px] text-zinc-500 font-semibold flex items-center gap-1 mt-1">
+            <p className="text-[10px] text-slate-400 dark:text-zinc-550 font-semibold flex items-center gap-1 mt-1">
               Local Browser Cache Storage
             </p>
           </div>
         </div>
 
         {/* Engine Stats */}
-        <div className="glass-panel rounded-2xl p-5 border-zinc-850 hover:border-zinc-800 transition-colors">
+        <div className="glass-panel rounded-2xl p-5 border-slate-200 dark:border-zinc-850 hover:border-slate-350 dark:hover:border-zinc-800 transition-colors">
           <div className="flex justify-between items-start">
-            <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Engine Status</span>
-            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-450">
+            <span className="text-xs text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Engine Status</span>
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-450">
               <Cpu className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold font-mono tracking-tight text-zinc-100">
+            <h3 className="text-2xl font-bold font-mono tracking-tight text-slate-900 dark:text-zinc-100">
               {stats.vramAllocatedGB > 0 ? `${stats.vramAllocatedGB} GB` : '0 GB'}
             </h3>
-            <p className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1 mt-1">
+            <p className="text-[10px] text-slate-400 dark:text-zinc-550 font-semibold flex items-center gap-1 mt-1">
               {stats.vramAllocatedGB > 0 ? (
-                <span className="text-emerald-400 animate-pulse">Gemma-2B allocated</span>
+                <span className="text-emerald-500 dark:text-emerald-400 animate-pulse font-bold">Gemma-2B allocated</span>
               ) : (
-                <span className="text-zinc-550">Unloaded from VRAM</span>
+                <span className="text-slate-400 dark:text-zinc-550">Unloaded from VRAM</span>
               )}
             </p>
           </div>
         </div>
       </div>
-
       {/* SVG CHARTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Token Consumption Over Time (SVG Area Chart) */}
         <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-zinc-800/50 pb-4">
+          <div className="flex justify-between items-center border-b border-slate-200 dark:border-zinc-800/50 pb-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-purple-400 animate-pulse" />
-              <h3 className="text-sm font-bold text-zinc-200">Token Consumption History</h3>
+              <Activity className="w-4 h-4 text-purple-500 dark:text-purple-400 animate-pulse" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200">Token Consumption History</h3>
             </div>
-            <span className="text-[10px] font-mono text-zinc-500">Last 6 Runs (Tokens/s)</span>
+            <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-555">Last 6 Runs (Tokens/s)</span>
           </div>
 
-          <div className="relative h-64 w-full bg-zinc-950/40 rounded-2xl border border-zinc-800/60 p-4 flex items-center justify-center">
+          <div className="relative h-64 w-full bg-slate-100/40 dark:bg-zinc-950/40 rounded-2xl border border-slate-200 dark:border-zinc-800/60 p-4 flex items-center justify-center">
             {recentLogs.length === 0 ? (
-              <span className="text-xs text-zinc-550">No run history found. Run analysis on Journal page.</span>
+              <span className="text-xs text-slate-400 dark:text-zinc-555">No run history found. Run analysis on Journal page.</span>
             ) : (
               <svg viewBox="0 0 500 200" className="w-full h-full overflow-visible">
                 <defs>
@@ -506,15 +505,15 @@ export default function DashboardPage() {
                 </defs>
                 
                 {/* Horizontal Grid Lines */}
-                <line x1="30" y1="40" x2="480" y2="40" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="80" x2="480" y2="80" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="120" x2="480" y2="120" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="165" x2="480" y2="165" stroke="#3f3f46" strokeWidth="1.5" />
+                <line x1="30" y1="40" x2="480" y2="40" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="80" x2="480" y2="80" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="120" x2="480" y2="120" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="165" x2="480" y2="165" className="stroke-slate-350 dark:stroke-zinc-700" strokeWidth="1.5" />
 
                 {/* Y-Axis Scale Labels */}
-                <text x="25" y="44" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">{maxTokensVal}</text>
-                <text x="25" y="104" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">{Math.round(maxTokensVal / 2)}</text>
-                <text x="25" y="168" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">0</text>
+                <text x="25" y="44" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">{maxTokensVal}</text>
+                <text x="25" y="104" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">{Math.round(maxTokensVal / 2)}</text>
+                <text x="25" y="168" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">0</text>
                 
                 {/* Chart Path Area */}
                 <path d={tokenFillPath} fill="url(#tokenGrad)" />
@@ -527,8 +526,8 @@ export default function DashboardPage() {
                   <g key={i} className="group cursor-pointer">
                     <circle cx={p.x} cy={p.y} r="6" fill="#c084fc" fillOpacity="0.3" />
                     <circle cx={p.x} cy={p.y} r="3.5" fill="#e9d5ff" stroke="#581c87" strokeWidth="1.5" />
-                    <rect x={p.x - 18} y={p.y - 20} width="36" height="14" rx="4" fill="#18181b" stroke="#7e22ce" strokeWidth="1" />
-                    <text x={p.x} y={p.y - 10} fill="#f3e8ff" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                    <rect x={p.x - 18} y={p.y - 20} width="36" height="14" rx="4" className="fill-slate-100 dark:fill-zinc-900 stroke-purple-500" strokeWidth="1" />
+                    <text x={p.x} y={p.y - 10} className="fill-slate-800 dark:fill-zinc-100" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                       {p.tokens}
                     </text>
                   </g>
@@ -536,7 +535,7 @@ export default function DashboardPage() {
               </svg>
             )}
           </div>
-          <div className="flex justify-between text-[9px] text-zinc-500 font-mono tracking-wider px-2">
+          <div className="flex justify-between text-[9px] text-slate-400 dark:text-zinc-555 font-mono tracking-wider px-2">
             {recentLogs.map((log, i) => (
               <span key={i}>Run #{log.id}</span>
             ))}
@@ -546,17 +545,17 @@ export default function DashboardPage() {
 
         {/* Model Inference Latency Logs (SVG Bar Chart) */}
         <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-zinc-800/50 pb-4">
+          <div className="flex justify-between items-center border-b border-slate-200 dark:border-zinc-800/50 pb-4">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-zinc-200">Local Inference Latency</h3>
+              <Clock className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200">Local Inference Latency</h3>
             </div>
-            <span className="text-[10px] font-mono text-zinc-500">Cache Misses vs. Cache Hits</span>
+            <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-555">Cache Misses vs. Cache Hits</span>
           </div>
 
-          <div className="relative h-64 w-full bg-zinc-950/40 rounded-2xl border border-zinc-800/60 p-4 flex items-center justify-center">
+          <div className="relative h-64 w-full bg-slate-100/40 dark:bg-zinc-950/40 rounded-2xl border border-slate-200 dark:border-zinc-800/60 p-4 flex items-center justify-center">
             {recentLogs.length === 0 ? (
-              <span className="text-xs text-zinc-550">No run history found. Run analysis on Journal page.</span>
+              <span className="text-xs text-slate-400 dark:text-zinc-555">No run history found. Run analysis on Journal page.</span>
             ) : (
               <svg viewBox="0 0 500 200" className="w-full h-full overflow-visible">
                 <defs>
@@ -575,15 +574,15 @@ export default function DashboardPage() {
                 </defs>
 
                 {/* Horizontal Grid Lines */}
-                <line x1="30" y1="40" x2="480" y2="40" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="80" x2="480" y2="80" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="120" x2="480" y2="120" stroke="#27272a" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="30" y1="165" x2="480" y2="165" stroke="#3f3f46" strokeWidth="1.5" />
+                <line x1="30" y1="40" x2="480" y2="40" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="80" x2="480" y2="80" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="120" x2="480" y2="120" className="stroke-slate-200 dark:stroke-zinc-800" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="30" y1="165" x2="480" y2="165" className="stroke-slate-350 dark:stroke-zinc-700" strokeWidth="1.5" />
 
                 {/* Y-Axis Scale Labels */}
-                <text x="25" y="44" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">{maxLatencyVal.toFixed(1)}s</text>
-                <text x="25" y="104" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">{(maxLatencyVal / 2).toFixed(1)}s</text>
-                <text x="25" y="168" fill="#71717a" fontSize="8" fontFamily="monospace" textAnchor="end">0.0s</text>
+                <text x="25" y="44" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">{maxLatencyVal.toFixed(1)}s</text>
+                <text x="25" y="104" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">{(maxLatencyVal / 2).toFixed(1)}s</text>
+                <text x="25" y="168" className="fill-slate-400 dark:fill-zinc-500" fontSize="8" fontFamily="monospace" textAnchor="end">0.0s</text>
 
                 {/* Bars */}
                 {latencyBars.map((bar, i) => (
@@ -615,29 +614,28 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
       {/* Dynamic Bottom Sections Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Raw Telemetry Log Table (7 cols) */}
         <div className="lg:col-span-7 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 pb-4">
             <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-bold text-zinc-200">Recent Local Inference Logs</h3>
+              <Terminal className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200">Recent Local Inference Logs</h3>
             </div>
-            <span className="text-[10px] text-zinc-550 font-mono font-bold">Node: dev-node-0</span>
+            <span className="text-[10px] text-slate-400 dark:text-zinc-555 font-mono font-bold">Node: dev-node-0</span>
           </div>
 
           {logs.length === 0 ? (
-            <div className="p-8 text-center text-zinc-650 flex flex-col items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-zinc-600 mb-2" />
+            <div className="p-8 text-center text-slate-400 dark:text-zinc-650 flex flex-col items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-slate-350 dark:text-zinc-600 mb-2" />
               <p className="text-xs">No traces loaded. Submit journal entries on the Journal page to sync telemetry data.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto border border-zinc-800/60 rounded-2xl bg-zinc-950/40">
-              <table className="w-full text-left text-xs text-zinc-400 border-collapse min-w-[700px]">
+            <div className="overflow-x-auto border border-slate-200 dark:border-zinc-800/60 rounded-2xl bg-slate-100/40 dark:bg-zinc-950/40">
+              <table className="w-full text-left text-xs text-slate-650 dark:text-zinc-400 border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="border-b border-zinc-850/80 text-[10px] text-zinc-500 uppercase font-semibold tracking-wider whitespace-nowrap bg-zinc-900/60">
+                  <tr className="border-b border-slate-250 dark:border-zinc-850/80 text-[10px] text-slate-500 dark:text-zinc-500 uppercase font-bold tracking-wider whitespace-nowrap bg-slate-200/50 dark:bg-zinc-900/60">
                     <th className="py-3.5 px-4">Log ID</th>
                     <th className="py-3.5 px-4">Timestamp</th>
                     <th className="py-3.5 px-4 min-w-[200px]">Action Insight Snip</th>
@@ -651,25 +649,25 @@ export default function DashboardPage() {
                   {logs.map((log) => (
                     <tr 
                       key={log.id} 
-                      className="border-b border-zinc-850/40 hover:bg-zinc-900/40 transition-colors font-mono whitespace-nowrap"
+                      className="border-b border-slate-200/50 dark:border-zinc-850/40 hover:bg-slate-100/60 dark:hover:bg-zinc-900/40 transition-colors font-mono whitespace-nowrap"
                     >
-                      <td className="py-3.5 px-4 text-purple-400 font-bold">#{log.id}</td>
-                      <td className="py-3.5 px-4 text-zinc-500">{log.timestamp}</td>
-                      <td className="py-3.5 px-4 max-w-[220px] truncate text-zinc-300 font-sans">{log.prompt}</td>
+                      <td className="py-3.5 px-4 text-purple-605 dark:text-purple-400 font-bold">#{log.id}</td>
+                      <td className="py-3.5 px-4 text-slate-405 dark:text-zinc-500">{log.timestamp}</td>
+                      <td className="py-3.5 px-4 max-w-[220px] truncate text-slate-800 dark:text-zinc-300 font-sans">{log.prompt}</td>
                       <td className="py-3.5 px-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          log.load > 70 ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20' : 
-                          log.load > 40 ? 'bg-amber-500/10 text-amber-450 border border-amber-500/20' : 
-                          'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
+                          log.load > 70 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/20' : 
+                          log.load > 40 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20' : 
+                          'bg-emerald-500/10 text-emerald-600 dark:text-emerald-455 border border-emerald-500/20'
                         }`}>
                           {log.load}%
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-zinc-350">{log.latency}</td>
-                      <td className="py-3.5 px-4 text-zinc-400">{log.tokens} tks</td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-zinc-350">{log.latency}</td>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-zinc-400">{log.tokens} tks</td>
                       <td className="py-3.5 px-4 text-right">
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                          log.cache === 'HIT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-450 border border-rose-500/20'
+                          log.cache === 'HIT' ? 'bg-emerald-500/10 text-emerald-650 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-450'
                         }`}>
                           {log.cache}
                         </span>
@@ -684,36 +682,36 @@ export default function DashboardPage() {
 
         {/* Right Column: Synced Reflections History (5 cols) */}
         <div className="lg:col-span-5 glass-panel rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/50 pb-4">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-zinc-200">Synced Database Reflections</h3>
+              <BookOpen className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-200">Synced Database Reflections</h3>
             </div>
-            <span className="text-[10px] text-zinc-550 font-mono font-bold">API: /api/journal</span>
+            <span className="text-[10px] text-slate-400 dark:text-zinc-555 font-mono font-bold">API: /api/journal</span>
           </div>
 
           {reflections.length === 0 ? (
-            <div className="p-8 text-center text-zinc-650 flex flex-col items-center justify-center min-h-[150px]">
-              <BookOpen className="w-8 h-8 text-zinc-600 mb-2" />
+            <div className="p-8 text-center text-slate-400 dark:text-zinc-650 flex flex-col items-center justify-center min-h-[150px]">
+              <BookOpen className="w-8 h-8 text-slate-350 dark:text-zinc-600 mb-2" />
               <p className="text-xs">No reflections stored in database. Write your thoughts on the Journal page.</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
               {reflections.slice(0, 10).map((ref) => (
-                <div key={ref.id} className="p-3 bg-zinc-900/60 border border-zinc-850 rounded-2xl hover:border-zinc-800 transition-colors">
+                <div key={ref.id} className="p-3 bg-slate-100/50 dark:bg-zinc-900/60 border border-slate-250 dark:border-zinc-850 rounded-2xl hover:border-slate-350 dark:hover:border-zinc-800 transition-colors">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] font-mono text-zinc-500">
+                    <span className="text-[9px] font-mono text-slate-400 dark:text-zinc-550">
                       {new Date(ref.created_at).toLocaleString().split(',')[1]?.trim() || "Synced"}
                     </span>
                     <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
-                      ref.decision_score > 70 ? 'bg-rose-500/5 text-rose-400 border-rose-500/10' : 
-                      ref.decision_score > 40 ? 'bg-amber-500/5 text-amber-400 border-amber-500/10' : 
-                      'bg-emerald-500/5 text-emerald-400 border-emerald-500/10'
+                      ref.decision_score > 70 ? 'bg-rose-500/5 text-rose-600 dark:text-rose-450 border-rose-500/10' : 
+                      ref.decision_score > 40 ? 'bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-500/10' : 
+                      'bg-emerald-500/5 text-emerald-600 dark:text-emerald-450 border-emerald-500/10'
                     }`}>
                       Score: {ref.decision_score}%
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-300 line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-750 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                     {ref.content}
                   </p>
                 </div>

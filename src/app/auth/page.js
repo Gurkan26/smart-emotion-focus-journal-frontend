@@ -169,7 +169,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors duration-300">
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors duration-300">
       {/* Top Right Theme Toggle Button */}
       <div className="absolute top-4 right-4 z-20">
         <button

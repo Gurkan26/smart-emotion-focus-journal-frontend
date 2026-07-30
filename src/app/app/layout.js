@@ -287,7 +287,7 @@ export default function AppLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col">
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 font-sans flex flex-col">
       {/* Top Header & Tabbed Navigation Bar */}
       <header className="sticky top-0 z-50 glass-panel border-b border-sky-500/20 px-6 py-3 flex items-center justify-between shadow-sm">
         {/* Brand Logo */}
