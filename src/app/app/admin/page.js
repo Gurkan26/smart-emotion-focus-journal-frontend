@@ -24,6 +24,12 @@ import {
 } from 'lucide-react';
 
 export default function AdminCockpitPage() {
+  const [activeAdminTab, setActiveAdminTab] = useState('users'); // 'users', 'config', 'adapters', 'telemetry', 'mcp'
+
+  // User Management state
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   // LLM Config state
   const [llmConfig, setLlmConfig] = useState({
     system_prompt: 'You are an expert AI prompt optimizer and cognitive load analyst.',
@@ -58,17 +64,17 @@ export default function AdminCockpitPage() {
   const [startingFinetune, setStartingFinetune] = useState(false);
 
   // MCP Suite state
-  const [activeMcpTab, setActiveMcpTab] = useState('render'); // 'render', 'vercel', 'mf_academy', 'deepwiki'
+  const [activeMcpTab, setActiveMcpTab] = useState('render');
   const [mcpQuery, setMcpQuery] = useState('System health and deployment status');
   const [mcpResult, setMcpResult] = useState(null);
   const [mcpLoading, setMcpLoading] = useState(false);
 
   useEffect(() => {
+    fetchUsersList();
     fetchAdminData();
     fetchFinetuneStatus();
     fetchFinetuneHistory();
 
-    // Poll status and history every 3 seconds if active
     const timer = setInterval(() => {
       fetchFinetuneStatus();
       fetchFinetuneHistory();
@@ -76,6 +82,43 @@ export default function AdminCockpitPage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  const fetchUsersList = async () => {
+    setLoadingUsers(true);
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/users`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setUsersList(data);
+      }
+    } catch (e) {
+      console.warn("Could not fetch user list:", e);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleToggleAdminRole = async (userId, makeAdmin) => {
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/users/role`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ user_id: userId, is_admin: makeAdmin })
+      });
+      if (res.ok) {
+        fetchUsersList();
+      } else {
+        const err = await res.json();
+        alert("Yetki güncellenemedi: " + (err.message || "Bilinmeyen hata"));
+      }
+    } catch (e) {
+      alert("Ağ hatası: " + e.message);
+    }
+  };
 
   const fetchAdminData = async () => {
     const backendUrl = getBackendUrl();
@@ -249,7 +292,140 @@ export default function AdminCockpitPage() {
         </div>
       </div>
 
-      {/* Grid: 2 Columns */}
+      {/* Sub-tab Navigation Bar */}
+      <div className="flex border-b border-zinc-800 gap-2 overflow-x-auto pb-2">
+        <button
+          onClick={() => setActiveAdminTab('users')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+            activeAdminTab === 'users'
+              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+          }`}
+        >
+          👥 Kullanıcı Yönetimi
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('config')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+            activeAdminTab === 'config'
+              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+          }`}
+        >
+          ⚙️ LLM Ayarları
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('adapters')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+            activeAdminTab === 'adapters'
+              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+          }`}
+        >
+          🧩 PEFT Adaptörleri
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('telemetry')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+            activeAdminTab === 'telemetry'
+              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+          }`}
+        >
+          📈 Model Eğitimi (Fine-Tuning)
+        </button>
+        <button
+          onClick={() => setActiveAdminTab('mcp')}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+            activeAdminTab === 'mcp'
+              ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+          }`}
+        >
+          🌐 MCP Suite
+        </button>
+      </div>
+
+      {/* Tab 1: User Management */}
+      {activeAdminTab === 'users' && (
+        <div className="glass-panel rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/50 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-zinc-100">Kayıtlı Kullanıcı Listesi ve Admin Yetkilendirme</h3>
+              <p className="text-xs text-zinc-400">Sistemdeki tüm kullanıcıları görüntüleyin ve anında admin yetkisi verin/kaldırın.</p>
+            </div>
+            <button
+              onClick={fetchUsersList}
+              className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-300 hover:text-white"
+            >
+              🔄 Yenile
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-zinc-900/80 text-zinc-400 font-semibold border-b border-zinc-800">
+                <tr>
+                  <th className="p-3">ID</th>
+                  <th className="p-3">E-Posta Adresi</th>
+                  <th className="p-3">Mevcut Rol</th>
+                  <th className="p-3">Kayıt Tarihi</th>
+                  <th className="p-3">İşlem</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/50">
+                {usersList.length > 0 ? (
+                  usersList.map((u) => {
+                    const isAdminUser = u.is_admin || u.role === 'admin';
+                    return (
+                      <tr key={u.id} className="hover:bg-zinc-900/40">
+                        <td className="p-3 font-mono">#{u.id}</td>
+                        <td className="p-3 font-medium text-zinc-100">{u.email}</td>
+                        <td className="p-3">
+                          <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase border ${
+                            isAdminUser
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                          }`}>
+                            {isAdminUser ? 'ADMIN' : 'USER'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-zinc-400">{new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
+                        <td className="p-3">
+                          {isAdminUser ? (
+                            <button
+                              onClick={() => handleToggleAdminRole(u.id, false)}
+                              className="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-semibold"
+                            >
+                              🚫 Adminliğini Kaldır
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleAdminRole(u.id, true)}
+                              className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[11px] font-semibold"
+                            >
+                              🛡️ Admin Yetkisi Ver
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-zinc-500">
+                      {loadingUsers ? 'Kullanıcı listesi yükleniyor...' : 'Kullanıcı kaydı bulunamadı.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Grid for existing tabs */}
+      {(activeAdminTab === 'config' || activeAdminTab === 'adapters' || activeAdminTab === 'telemetry' || activeAdminTab === 'mcp') && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: PEFT Fine-Tuning & Adapter Management (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
@@ -675,6 +851,7 @@ export default function AdminCockpitPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

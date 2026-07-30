@@ -355,7 +355,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 to-zinc-300">
-            Raw LLM Monitoring
+            Metrics & System Monitoring Dashboard
           </h1>
           <p className="text-zinc-400 text-sm mt-1 flex items-center gap-2">
             <span>Real-time telemetry of local inference and cache hits.</span>

@@ -35,6 +35,7 @@ export default function AppLayout({ children }) {
   const [actionStatus, setActionStatus] = useState(null);
 
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchVersionAndConfig = async () => {
     const backendUrl = getBackendUrl();
@@ -82,17 +83,25 @@ export default function AppLayout({ children }) {
       return;
     }
 
-    setCheckingAuth(false);
-
+    let adminFlag = false;
     try {
       const parsed = JSON.parse(storedUser);
       if (parsed.email) setUserEmail(parsed.email);
+      adminFlag = parsed.is_admin === true || parsed.role === 'admin' || parsed.email === 'gurkansenturk@admin.com';
+      setIsAdmin(adminFlag);
+
+      // Route Guard for Normal Users
+      if (!adminFlag && (pathname === '/app/dashboard' || pathname === '/app/admin')) {
+        router.replace('/app/journal');
+        return;
+      }
     } catch (e) {
       console.error("Failed to parse stored user:", e);
     }
 
+    setCheckingAuth(false);
     fetchVersionAndConfig();
-  }, [router]);
+  }, [router, pathname]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -219,26 +228,31 @@ export default function AppLayout({ children }) {
     router.push('/auth');
   };
 
-  const navItems = [
+  const allNavItems = [
     {
       name: 'Prompt Optimizer',
       href: '/app/journal',
       icon: Sparkles,
-      description: 'AI prompt engineering & optimization'
+      description: 'Prompt atma ekranı ve yanıt ekranı',
+      adminOnly: false
     },
     {
-      name: 'Monitoring Dashboard',
+      name: 'Metrics',
       href: '/app/dashboard',
       icon: Activity,
-      description: 'Raw LLM performance logs'
+      description: 'Sistem gecikmesi ve metrik kayıtları',
+      adminOnly: true
     },
     {
-      name: 'Admin Cockpit',
+      name: 'Admin Control Panel',
       href: '/app/admin',
       icon: Cpu,
-      description: 'PEFT LoRA, System Prompts & MCP'
+      description: 'Kullanıcı yönetimi, PEFT LoRA & MCP',
+      adminOnly: true
     }
   ];
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
 
   if (checkingAuth) {
     return (

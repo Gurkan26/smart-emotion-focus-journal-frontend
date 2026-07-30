@@ -17,6 +17,37 @@ export default function AuthPage() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
+  const handleQuickAdminLogin = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    const backendUrl = getBackendUrl();
+    try {
+      const response = await fetch(`${backendUrl}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "gurkansenturk@admin.com",
+          password: "admin123"
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Admin login failed");
+      }
+      localStorage.setItem('journal_auth_token', data.token);
+      localStorage.setItem('journal_auth_user', JSON.stringify(data.user || { email: "gurkansenturk@admin.com", is_admin: true, role: 'admin' }));
+      setSuccessMessage("Admin login successful! Redirecting...");
+      setTimeout(() => {
+        router.push('/app/admin');
+      }, 600);
+    } catch (err) {
+      setError(err.message || "Admin login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -162,6 +193,19 @@ export default function AuthPage() {
               }`}
             >
               Register
+            </button>
+          </div>
+
+          {/* Quick Admin Login Button */}
+          <div className="px-8 pt-6 pb-2">
+            <button
+              type="button"
+              onClick={handleQuickAdminLogin}
+              disabled={loading}
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold text-xs transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 border border-emerald-400/30"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>⚡ Admin Girişi (gurkansenturk@admin.com)</span>
             </button>
           </div>
 
