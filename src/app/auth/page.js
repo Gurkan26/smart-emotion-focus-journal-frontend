@@ -83,25 +83,30 @@ export default function AuthPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Authentication failed. Please try again.");
+        const errorMsg = typeof data.error === 'string' ? data.error : (data.message || data.error?.message || "Authentication failed. Please check your email/password or register.");
+        throw new Error(errorMsg);
       }
 
       if (isLogin) {
         console.log('Login successful!', data);
-        // Clear previous user's data if a different user is logging in
         const previousUserId = getUserId();
         const newUserId = data.user?.id;
         if (previousUserId && newUserId && previousUserId !== newUserId) {
           clearAllUserStorage(previousUserId);
         }
-        // Store Session token in local storage
         if (data.token) {
           localStorage.setItem('journal_auth_token', data.token);
           localStorage.setItem('journal_auth_user', JSON.stringify(data.user || { email: formData.email }));
         }
         setSuccessMessage("Success! Redirecting to workspace...");
+        
+        const isAdminUser = data.user?.is_admin === true || data.user?.role === 'admin' || data.user?.email === 'gurkansenturk@admin.com';
         setTimeout(() => {
-          router.push('/app/journal');
+          if (isAdminUser) {
+            router.push('/app/admin');
+          } else {
+            router.push('/app/journal');
+          }
         }, 800);
       } else {
         console.log('Registration successful!', data);

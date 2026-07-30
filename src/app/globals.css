@@ -106,3 +106,58 @@ body {
 .animate-pulse-slow {
   animation: pulse-slow 4s ease-in-out infinite;
 }
+
+/* Light mode high-contrast typography & panel overrides */
+html:not(.dark) {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 15px -1px rgba(15, 23, 42, 0.06) !important;
+  }
+
+  .text-zinc-100, .text-zinc-200, .text-zinc-50 {
+    color: #0f172a !important;
+  }
+
+  .text-zinc-300, .text-zinc-400 {
+    color: #334155 !important;
+  }
+
+  .text-zinc-500, .text-zinc-600 {
+    color: #475569 !important;
+  }
+
+  .bg-zinc-900, .bg-zinc-900\/80, .bg-zinc-900\/60, .bg-zinc-950, .bg-zinc-950\/80 {
+    background-color: #f1f5f9 !important;
+  }
+
+  .bg-zinc-900\/50, .bg-zinc-900\/40, .bg-zinc-900\/20 {
+    background-color: #f8fafc !important;
+  }
+
+  .border-zinc-800, .border-zinc-850, .border-zinc-700 {
+    border-color: #cbd5e1 !important;
+  }
+
+  input, textarea, select {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  table {
+    color: #0f172a !important;
+  }
+
+  thead {
+    background-color: #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+}

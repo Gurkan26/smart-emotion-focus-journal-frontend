@@ -90,8 +90,8 @@ export default function AppLayout({ children }) {
       adminFlag = parsed.is_admin === true || parsed.role === 'admin' || parsed.email === 'gurkansenturk@admin.com';
       setIsAdmin(adminFlag);
 
-      // Route Guard for Normal Users
-      if (!adminFlag && (pathname === '/app/dashboard' || pathname === '/app/admin')) {
+      // Route Guard for Normal Users: Only restrict /app/admin
+      if (!adminFlag && pathname === '/app/admin') {
         router.replace('/app/journal');
         return;
       }
@@ -268,7 +268,7 @@ export default function AppLayout({ children }) {
       href: '/app/dashboard',
       icon: Activity,
       description: 'Metrik ve sistem performansı',
-      adminOnly: true
+      adminOnly: false
     },
     {
       name: 'Admin Control Panel',
