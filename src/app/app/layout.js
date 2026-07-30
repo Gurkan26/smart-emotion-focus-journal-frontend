@@ -350,7 +350,7 @@ export default function AppLayout({ children }) {
             className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 border border-sky-500/20 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all text-xs flex items-center gap-1 font-semibold"
             title={theme === 'light' ? 'Koyu Temaya Geç (Dark Mode)' : 'Açık Temaya Geç (Light Mode)'}
           >
-            {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+            {theme === 'light' ? '☀️ Light' : '🌙 Dark'}
           </button>
 
           {/* Settings button */}

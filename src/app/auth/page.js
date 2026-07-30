@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Brain, Mail, Lock, User, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import { getBackendUrl, clearAllUserStorage, getUserId } from '@/lib/api';
@@ -16,6 +16,30 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('journal_theme') || 'light';
+      setTheme(saved);
+      if (saved === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('journal_theme', next);
+    if (next === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const handleQuickAdminLogin = async () => {
     setLoading(true);
@@ -146,6 +170,17 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern transition-colors">
+      {/* Top Right Theme Toggle Button */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-sm hover:scale-105 transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          {theme === 'light' ? '☀️ Light' : '🌙 Dark'}
+        </button>
+      </div>
+
       {/* Decorative Glow Orbs */}
       <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-sky-500/10 dark:bg-sky-500/20 rounded-full blur-[100px] pointer-events-none -z-10 animate-pulse-slow"></div>
       <div className="absolute bottom-1/4 right-1/3 w-[350px] h-[350px] bg-teal-500/10 dark:bg-teal-500/20 rounded-full blur-[90px] pointer-events-none -z-10"></div>
