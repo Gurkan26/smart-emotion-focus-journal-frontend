@@ -17,7 +17,11 @@ import {
   Copy,
   Check,
   ArrowRight,
-  History
+  History,
+  ThumbsUp,
+  ThumbsDown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const TEMPLATES = [
@@ -97,6 +101,8 @@ export default function PromptOptimizerPage() {
   const [optimizationResult, setOptimizationResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [showThinking, setShowThinking] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(null); // 'up' | 'down' | null
 
   // Server Status State
   const [backendStatus, setBackendStatus] = useState('checking');
@@ -157,6 +163,8 @@ export default function PromptOptimizerPage() {
     setOptimizing(true);
     setOptimizationResult(null);
     setCopied(false);
+    setFeedbackGiven(null);
+    setShowThinking(false);
 
     const backendUrl = getBackendUrl();
     const fetchHeaders = getAuthHeaders();
@@ -224,6 +232,26 @@ export default function PromptOptimizerPage() {
     navigator.clipboard.writeText(optimizationResult.optimizedPrompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleFeedback = async (type) => {
+    if (!optimizationResult || feedbackGiven) return;
+    setFeedbackGiven(type);
+    const backendUrl = getBackendUrl();
+    const headers = getAuthHeaders();
+    try {
+      await fetch(`${backendUrl}/feedback`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          rating: type === 'up' ? 5 : 1,
+          prompt: promptText,
+          optimized_prompt: optimizationResult.optimizedPrompt
+        })
+      });
+    } catch (err) {
+      console.warn("Feedback submit failed:", err);
+    }
   };
 
   return (
@@ -435,23 +463,85 @@ export default function PromptOptimizerPage() {
                   <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">Optimize Edilmiş Prompt</h3>
                 </div>
 
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 dark:bg-purple-600/20 hover:bg-purple-500/20 dark:hover:bg-purple-600/30 border border-purple-550/30 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-                      <span className="text-emerald-500 dark:text-emerald-400">Kopyalandı!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Kopyala</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Feedback Thumbs Up / Down */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+                    <button
+                      onClick={() => handleFeedback('up')}
+                      title="İyi Yanıt (Model Eğitimi için Onayla)"
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        feedbackGiven === 'up' 
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                          : 'text-slate-400 hover:text-emerald-400 dark:text-zinc-500 dark:hover:text-emerald-400'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleFeedback('down')}
+                      title="Kötü Yanıt (İyileştirme Bildir)"
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        feedbackGiven === 'down' 
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' 
+                          : 'text-slate-400 hover:text-rose-400 dark:text-zinc-500 dark:hover:text-rose-400'
+                      }`}
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 dark:bg-purple-600/20 hover:bg-purple-500/20 dark:hover:bg-purple-600/30 border border-purple-550/30 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                        <span className="text-emerald-500 dark:text-emerald-400">Kopyalandı!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Kopyala</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
+
+              {/* Feedback Success Notification */}
+              {feedbackGiven && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 text-[11px] text-emerald-400 font-semibold flex items-center justify-between animate-fade-in">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                    {feedbackGiven === 'up' 
+                      ? 'Geri bildirim kaydedildi! Bu örnek otomatik fine-tune veri setine eklendi.'
+                      : 'Geri bildirim kaydedildi. Model iyileştirmesi için not edildi.'}
+                  </span>
+                </div>
+              )}
+
+              {/* Collapsible Model Thinking Process (<thinking>) */}
+              {(optimizationResult.thinkingProcess || optimizationResult.thinking_process) && (
+                <div className="bg-purple-950/20 border border-purple-500/30 rounded-2xl overflow-hidden transition-all">
+                  <button
+                    onClick={() => setShowThinking(!showThinking)}
+                    className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-bold text-purple-300 hover:bg-purple-500/10 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-purple-400" />
+                      <span>Model Akıl Yürütme Süreci (&lt;thinking&gt;)</span>
+                    </div>
+                    {showThinking ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+
+                  {showThinking && (
+                    <div className="px-4 pb-3 pt-1 border-t border-purple-500/20 text-[11px] font-mono text-purple-200/80 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto bg-black/40">
+                      {optimizationResult.thinkingProcess || optimizationResult.thinking_process}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Output Content */}
               <div className="bg-slate-100/80 dark:bg-[#070a10] border border-slate-250 dark:border-zinc-800 rounded-2xl p-4 text-xs font-mono text-slate-800 dark:text-zinc-200 leading-relaxed max-h-[260px] overflow-y-auto whitespace-pre-wrap selection:bg-purple-500/30">
